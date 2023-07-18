@@ -1,3 +1,4 @@
+
 // See http://iphonedevwiki.net/index.php/Logos
 
 #if TARGET_OS_SIMULATOR
@@ -5,34 +6,35 @@
 #endif
 
 #import <UIKit/UIKit.h>
+#import "YMUIWindow.h"
+#import "YMUIViewController.h"
 
-%hook ClassName
+#import "ShiSnGeWindow.h"
+#import "ShiSanGeViewController.h"
 
-+ (id)sharedInstance
-{
-	%log;
 
-	return %orig;
-}
+static YMUIWindow *window = nil;
+static YMUIViewController *controller = nil;
 
-- (void)messageWithNoReturnAndOneArgument:(id)originalArgument
-{
-	%log;
+static ShiSnGeWindow *windowb = nil;
+static ShiSanGeViewController *controllerb = nil;
 
-	%orig(originalArgument);
-	
-	// or, for exmaple, you could use a custom value instead of the original argument: %orig(customValue);
-}
+%hook SpringBoard
 
-- (id)messageWithReturnAndNoArguments
-{
-	%log;
-
-	id originalReturnOfMessage = %orig;
-	
-	// for example, you could modify the original return value before returning it: [SomeOtherClass doSomethingToThisObject:originalReturnOfMessage];
-
-	return originalReturnOfMessage;
+- (void)applicationDidFinishLaunching:(id)application {
+    %orig;
+    
+    window = [YMUIWindow sharedInstance];
+    window.rootViewController = [YMUIViewController sharedInstance];
+    
+    windowb = [ShiSnGeWindow sharedInstance];
+    windowb.rootViewController = [ShiSanGeViewController sharedInstance];
+    
+    
+    
+    [YMUIWindow sharedInstance];
+    [ShiSnGeWindow sharedInstance];
+    NSLog(@"[yiming] SpringBoard is hooked");
 }
 
 %end
