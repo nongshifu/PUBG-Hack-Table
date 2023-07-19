@@ -24,10 +24,14 @@ NS_ASSUME_NONNULL_BEGIN
 int getProcesses(NSString *Name);
 mach_port_t getTask(int pid);
 vm_map_offset_t getBaseAddress(mach_port_t task);
-extern bool 绘制总开关,物资功能,枪械物资开关,防具物资开关,药品物资开关,车辆物资开关;
+extern bool 绘制总开关,物资总开关;
+extern bool 枪械物资开关,防具物资开关,药品物资开关,车辆物资开关;
 extern bool 附近人数开关,射线开关,骨骼开关,血条开关,名字开关,距离开关,方框开关;
-extern bool 枪械功能,手持开关,无后座开关,聚点开关,追踪开关,防抖开关;
-extern bool 物资功能,枪械物资开关,防具物资开关,药品物资开关,车辆物资开关;
+extern bool 枪械功能,手持开关,无后座开关,聚点开关,追踪开关,防抖开关,自瞄开关;
+extern float 追踪距离;
+extern float 追踪圆圈半径;
+extern int 追踪位置;
+extern float 自瞄速度;
 
 bool getGame();
 

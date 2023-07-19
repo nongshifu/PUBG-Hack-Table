@@ -31,7 +31,7 @@
 {
     self = [super initWithFrame:frame];
     if (self) {
-        self.frame=CGRectMake(kWidth/2-400/2, kHeight/2-菜单高度/2, 菜单宽度, 菜单高度);
+        self.frame=CGRectMake(100, 30, 菜单宽度, 菜单高度);
         // 设置圆角半径
         self.subviews.firstObject.layer.cornerRadius = 10.0;
         self.subviews.firstObject.layer.masksToBounds = YES; // 剪裁超出边界的部分

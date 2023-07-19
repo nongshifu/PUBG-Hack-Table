@@ -230,7 +230,55 @@ static D3DXMATRIX toMATRIX(FRotator rot)
     
     return M;
 }
-
+- (BOOL)getInsideFov:(FVector2D)bone radius:(float)radius
+{
+    FVector2D Cenpoint;
+    Cenpoint.X = bone.X - (self.canvas.X / 2);
+    Cenpoint.Y = bone.Y - (self.canvas.Y / 2);
+    if (Cenpoint.X * Cenpoint.X + Cenpoint.Y * Cenpoint.Y <= radius * radius) {
+        return YES;
+    }
+    return NO;
+}
+- (FRotator)calcAngle:(FVector3D)aimPos
+{
+    FRotator rot;
+    rot.Yaw = ((float)(atan2f(aimPos.Y, aimPos.X)) * (float)(180.f / M_PI));
+    rot.Pitch = ((float)(atan2f(aimPos.Z,
+                                sqrtf(aimPos.X * aimPos.X +
+                                      aimPos.Y * aimPos.Y +
+                                      aimPos.Z * aimPos.Z))) * (float)(180.f / M_PI));
+    rot.Roll = 0.f;
+    return rot;
+}
+- (FRotator)clamp:(FRotator)Rotation
+{
+    if (Rotation.Yaw > 180.f) {
+        Rotation.Yaw -= 360.f;
+    } else if (Rotation.Yaw < -180.f) {
+        Rotation.Yaw += 360.f;
+    }
+    
+    if (Rotation.Pitch > 180.f) {
+        Rotation.Pitch -= 360.f;
+    } else if (Rotation.Pitch < -180.f) {
+        Rotation.Pitch += 360.f;
+    }
+    
+    if (Rotation.Pitch < -89.f) {
+        Rotation.Pitch = -89.f;
+    } else if (Rotation.Pitch > 89.f) {
+        Rotation.Pitch = 89.f;
+    }
+    
+    Rotation.Roll = 0.f;
+    
+    return Rotation;
+}
+- (int)getCenterOffsetForVector:(FVector2D)point
+{
+    return sqrt(pow(point.X - self.canvas.X/2, 2.0) + pow(point.Y - self.canvas.Y/2, 2.0));
+}
 #pragma mark - 地址判断
 static bool IsValidAddress(uintptr_t address) {
     return address && address > 0x100000000 && address < 0x2000000000;
@@ -490,11 +538,16 @@ bool getGame(){
 static NSArray *drArray;
 static NSArray *wzArray;
 
-bool 绘制总开关,物资功能,枪械物资开关,防具物资开关,药品物资开关,车辆物资开关;
+bool 绘制总开关,物资总开关;
+bool 枪械物资开关,防具物资开关,药品物资开关,车辆物资开关;
 bool 附近人数开关,射线开关,骨骼开关,血条开关,名字开关,距离开关,方框开关;
-bool 枪械功能,手持开关,无后座开关,聚点开关,追踪开关,防抖开关;
-
+bool 枪械功能,手持开关,无后座开关,聚点开关,追踪开关,防抖开关,自瞄开关;
+float 追踪距离;
+float 追踪圆圈半径;
+int 追踪位置;
+float 自瞄速度;
 - (void)getNSArray {
+    if (!绘制总开关)return;;
     NSMutableArray *drtempArr = [NSMutableArray array];
     NSMutableArray *wztempArr = [NSMutableArray array];
     static NSString*wzName=nil;//声明函数内全局变量
@@ -504,6 +557,49 @@ bool 枪械功能,手持开关,无后座开关,聚点开关,追踪开关,防抖�
     
     const float hpValues[] = {100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200};
     const int hpValueCount = sizeof(hpValues) / sizeof(float);
+    
+    // 获取视角信息
+    uintptr_t NetDriver = Read<uintptr_t>(Gworld + 0x98);
+    
+    uintptr_t ServerConnection = Read<uintptr_t>(NetDriver + 0x88);
+    
+    uintptr_t PlayerController = Read<uintptr_t>(ServerConnection + 0x30);
+    
+    uintptr_t PlayerCameraManager = Read<uintptr_t>(PlayerController + 0x5c0);
+   
+    readMemory(PlayerCameraManager + 0x1140 + 0x10, sizeof(FMinimalViewInfo), &POV);
+    
+    //无后座相关
+    uintptr_t mySelf = Read<uintptr_t>(PlayerController + 0x530);
+    uintptr_t WeaponManagerComponent =Read<uintptr_t>(mySelf+ 0x2780);
+    uintptr_t CurrentWeaponReplicated =Read<uintptr_t>(WeaponManagerComponent+ 0x568);
+    uintptr_t ShootWeaponEntityComp=Read<uintptr_t>(CurrentWeaponReplicated+ 0x11b8);
+    if(无后座开关){
+        float RecoilKickADS = 0.001;
+        writeMemory(ShootWeaponEntityComp + 0x1718, sizeof(float), &RecoilKickADS);
+    }
+    if (聚点开关) {
+        float judian1 = 0.01;
+        writeMemory(ShootWeaponEntityComp + 0x1848, sizeof(float), &judian1);
+        writeMemory(ShootWeaponEntityComp + 0x1864, sizeof(float), &judian1);
+        writeMemory(ShootWeaponEntityComp + 0x177c, sizeof(float), &judian1);
+        writeMemory(ShootWeaponEntityComp + 0x1780, sizeof(float), &judian1);
+        writeMemory(ShootWeaponEntityComp + 0x1784, sizeof(float), &judian1);
+        writeMemory(ShootWeaponEntityComp + 0x1788, sizeof(float), &judian1);
+        
+                    
+    }
+    if (防抖开关) {
+        float fangdou = 0.001;
+        writeMemory(ShootWeaponEntityComp + 0x17e4, sizeof(float), &fangdou);
+        writeMemory(ShootWeaponEntityComp + 0x17c8, sizeof(float), &fangdou);
+        writeMemory(ShootWeaponEntityComp + 0x17e4, sizeof(float), &fangdou);
+        writeMemory(ShootWeaponEntityComp + 0x16ec, sizeof(float), &fangdou);
+        writeMemory(ShootWeaponEntityComp + 0x16f0, sizeof(float), &fangdou);
+        writeMemory(ShootWeaponEntityComp + 0x16f4, sizeof(float), &fangdou);
+        writeMemory(ShootWeaponEntityComp + 0x16f8, sizeof(float), &fangdou);
+       
+    }
     
     uint64_t level = Read<uintptr_t>(Gworld + 0x90);
     uint64_t actorArray = Read<uintptr_t>(level + 0xA0);
@@ -515,7 +611,7 @@ bool 枪械功能,手持开关,无后座开关,聚点开关,追踪开关,防抖�
         int FNameID = Read<int>(actor + 0x18);
         NSString* ClassName = getFNameFromID(GName, FNameID);
         if (![ClassName containsString:@"PlayerPawn"]) {
-            if (!物资功能)continue;
+            
             PUBGPlayerWZ *model=[[PUBGPlayerWZ alloc] init];
             if (枪械物资开关) {
                 wzName=[self reName:ClassName ID:4];
@@ -579,12 +675,13 @@ bool 枪械功能,手持开关,无后座开关,聚点开关,追踪开关,防抖�
 
 
 - (NSMutableArray*)getData {
+    
     static int Bones[18] = {6,5,4,3,2,1,12,13,14,33,34,35,53,54,55,57,58,59};
     static FVector2D Bones_Pos[18];
     
     // 初始化玩家字典
     NSMutableArray *playerArray = @[].mutableCopy;//玩家字典
-    
+    if (!绘制总开关)return playerArray;;
     // 获取视角信息
     uintptr_t NetDriver = Read<uintptr_t>(Gworld + 0x98);
     if (!isValidAddress(NetDriver))return playerArray;
@@ -596,35 +693,7 @@ bool 枪械功能,手持开关,无后座开关,聚点开关,追踪开关,防抖�
     if (!isValidAddress(PlayerCameraManager))return playerArray;
     readMemory(PlayerCameraManager + 0x1140 + 0x10, sizeof(FMinimalViewInfo), &POV);
     
-    //无后座相关
-    uintptr_t mySelf = Read<uintptr_t>(PlayerController + 0x6d0);
-    uintptr_t WeaponManagerComponent =Read<uintptr_t>(mySelf+ 0x24e0);
-    uintptr_t CurrentWeaponReplicated =Read<uintptr_t>(WeaponManagerComponent+ 0x728);
-    uintptr_t ShootWeaponEntityComp=Read<uintptr_t>(CurrentWeaponReplicated+ 0x12f8);
-    if(无后座开关){
-        float RecoilKickADS = 0.001;
-        writeMemory(ShootWeaponEntityComp + 0x16a0, sizeof(float), &RecoilKickADS);
-        writeMemory(ShootWeaponEntityComp + 0x16ac, sizeof(float), &RecoilKickADS);
-    }
-    if (聚点开关) {
-        float judian1 = 0.01;
-        writeMemory(ShootWeaponEntityComp + 0x16fc, sizeof(float), &judian1);
-        writeMemory(ShootWeaponEntityComp + 0x1700, sizeof(float), &judian1);
-        writeMemory(ShootWeaponEntityComp + 0x1704, sizeof(float), &judian1);
-        writeMemory(ShootWeaponEntityComp + 0x1708, sizeof(float), &judian1);
-                    
-    }
-    if (防抖开关) {
-        float fangdou = 0.001;
-        writeMemory(ShootWeaponEntityComp + 0x17e4, sizeof(float), &fangdou);
-        writeMemory(ShootWeaponEntityComp + 0x17c8, sizeof(float), &fangdou);
-        writeMemory(ShootWeaponEntityComp + 0x17e4, sizeof(float), &fangdou);
-        writeMemory(ShootWeaponEntityComp + 0x16ec, sizeof(float), &fangdou);
-        writeMemory(ShootWeaponEntityComp + 0x16f0, sizeof(float), &fangdou);
-        writeMemory(ShootWeaponEntityComp + 0x16f4, sizeof(float), &fangdou);
-        writeMemory(ShootWeaponEntityComp + 0x16f8, sizeof(float), &fangdou);
-       
-    }
+    
     
     for (int i = 0; i < drArray.count; i++) {
         uintptr_t player = [drArray[i] unsignedLongLongValue];
@@ -661,18 +730,20 @@ bool 枪械功能,手持开关,无后座开关,聚点开关,追踪开关,防抖�
         }
         if (手持开关) {
             int WeaponId = 0;
-            uintptr_t WeaponManagerComponent =Read<uintptr_t>(player+ 0x24e0);
-            uintptr_t CurrentWeaponReplicated = Read<uintptr_t>(WeaponManagerComponent+0x728);
-            uintptr_t MyShootWeaponEntityComp = Read<uintptr_t>(CurrentWeaponReplicated+0x12f8);
-            WeaponId= Read<int>(MyShootWeaponEntityComp+0x148);
+            uintptr_t WeaponManagerComponent =Read<uintptr_t>(player+ 0x2780);
+            uintptr_t CurrentWeaponReplicated = Read<uintptr_t>(WeaponManagerComponent+0x568);
+            uintptr_t MyShootWeaponEntityComp = Read<uintptr_t>(CurrentWeaponReplicated+0x11b8);
+            WeaponId= Read<int>(MyShootWeaponEntityComp+0x110);
             model.WeaponName=[self souchistr:WeaponId];
         }
+       
         
        
         // 计算骨骼位置
         uintptr_t Mesh = Read<uintptr_t>(player + 0x5b8);
+        FTransform RelativeScale3D = getMatrixConversion(Mesh + 0x1A0);
         if (骨骼开关) {
-            FTransform RelativeScale3D = getMatrixConversion(Mesh + 0x194 +0xC);
+            
             for (int j = 0; j < 18; j++) {
                 FVector3D boneWorldLocation = getBoneWithRotation(Mesh, Bones[j], RelativeScale3D);
                 Bones_Pos[j] = worldToScreen(boneWorldLocation, POV, self.canvas);
@@ -698,6 +769,121 @@ bool 枪械功能,手持开关,无后座开关,聚点开关,追踪开关,防抖�
             model._17 = Bones_Pos[17];
         }
         
+        FVector3D AimbotWorldLocation = getBoneWithRotation(Mesh, 追踪位置, RelativeScale3D);
+        FVector2D AimbotScreenLocation = worldToScreen(AimbotWorldLocation, POV, self.canvas);
+        float markDistance = self.canvas.X;
+        CGPoint markScreenPos = CGPointMake(self.canvas.X/2, self.canvas.Y/2);
+        if ([self getInsideFov:AimbotScreenLocation radius:追踪圆圈半径*200]) {
+            int tDistance = [self getCenterOffsetForVector:AimbotScreenLocation];
+            if (tDistance <= 追踪圆圈半径*200 && tDistance < markDistance) {
+                markDistance = tDistance;
+                markScreenPos.x = AimbotScreenLocation.X;
+                markScreenPos.y = AimbotScreenLocation.Y;
+                // 自己枪械开镜或者开火
+               
+                uintptr_t Character = Read<uintptr_t>(PlayerController + 0x538);
+                BOOL bIsWeaponFiring = Read<bool>(Character + 0x1c48);
+                BOOL bIsGunADS = Read<bool>(Character + 0x13f8);
+                if (bIsWeaponFiring || bIsGunADS ) {
+                    // 自瞄目标距离
+                    float distance = getDistance(AimbotWorldLocation, POV.Location) / 100;
+                    
+                    float temp = 1.23f;
+                    float Gravity = 5.72f;
+                    
+                    if (distance < 5000.f)       temp = 1.8f;  else if (distance < 10000.f) temp = 1.72f;
+                    else if (distance < 15000.f) temp = 1.23f; else if (distance < 20000.f) temp = 1.24f;
+                    else if (distance < 25000.f) temp = 1.25f; else if (distance < 30000.f) temp = 1.26f;
+                    uintptr_t WeaponManagerComponent =Read<uintptr_t>(player+ 0x2780);
+                    uintptr_t CurrentWeaponReplicated = Read<uintptr_t>(WeaponManagerComponent+0x568);
+                    uintptr_t ShootWeaponEntityComp = Read<uintptr_t>(CurrentWeaponReplicated+0x11b8);
+                    
+                    float BulletFireSpeed = Read<float>(ShootWeaponEntityComp + 0x12e4);
+                    
+                    float BulletFlyTime = distance / BulletFireSpeed;
+                    float secFlyTime = BulletFlyTime * temp;
+                    
+                    // 目标移动速度
+                    
+                    FVector3D VelocitySafty = Read<FVector3D>(player + 0xe4c);
+                    
+                    // 预判目标位置
+                    FVector3D delta;
+                    delta.X = VelocitySafty.X * secFlyTime;
+                    delta.Y = VelocitySafty.Y * secFlyTime;
+                    delta.Z = VelocitySafty.Z * secFlyTime;
+                    
+                    if (distance > 10000.f) {
+                        delta.Z += 0.5 * Gravity * BulletFlyTime * BulletFlyTime * 5.0f;
+                    }
+                    
+                    FVector3D targetlocation;
+                    targetlocation.X = AimbotWorldLocation.X - POV.Location.X + delta.X;
+                    targetlocation.Y = AimbotWorldLocation.Y - POV.Location.Y + delta.Y;
+                    targetlocation.Z = AimbotWorldLocation.Z - POV.Location.Z + delta.Z;
+                    
+                    // 目标位置角度
+                    FRotator Rotation = [self calcAngle:targetlocation];
+                    
+                    // 自己位置角度
+                    FRotator ControlRotation;
+                    
+                    readMemory(PlayerController + 0x560, sizeof(FRotator), &ControlRotation);
+                    
+                    // 平滑自瞄角度
+                    FRotator clampRotation;
+                    clampRotation.Yaw = Rotation.Yaw - ControlRotation.Yaw;
+                    clampRotation.Pitch = Rotation.Pitch - ControlRotation.Pitch;
+                    clampRotation.Roll = Rotation.Roll - ControlRotation.Roll;
+                    
+                    FRotator aimbotRotation;
+                    aimbotRotation.Yaw = ControlRotation.Yaw + [self clamp:clampRotation].Yaw * 自瞄速度*10;
+                    aimbotRotation.Pitch = ControlRotation.Pitch + [self clamp:clampRotation].Pitch * 自瞄速度*10;
+                    float pitch = atan2f(targetlocation.Z, sqrt(pow(targetlocation.X, 2) + pow(targetlocation.Y, 2))) * 57.29577951308f;
+                    float yaw = atan2f(targetlocation.Y, targetlocation.X) * 57.29577951308f;
+                    
+                    
+                    float Yaw = aimbotRotation.Yaw;
+                    float Pitch = aimbotRotation.Pitch;
+                    if (!isnan(Yaw) && !isnan(Pitch)) {
+                        
+                        // 开火自瞄
+                        if(自瞄开关){
+                            if(model.Health!=0 && bIsGunADS && model.Distance<=追踪距离*400)
+                            {
+                                //开镜自瞄
+                                writeMemory(PlayerController + 0x560, sizeof(float), &Pitch);
+                                
+                                writeMemory(PlayerController + 0x560+ 4, sizeof(float), &Yaw);
+                            }
+                            if (model.Health!=0 && model.Distance<=追踪距离*400) {
+                                
+                                //开火自瞄
+                                
+                                writeMemory(PlayerController + 0x560, sizeof(float), &Pitch);
+                                
+                                writeMemory(PlayerController + 0x560+ 4, sizeof(float), &Yaw);
+                                
+                            }
+                        }
+                        if(追踪开关){
+                            if ( model.Distance <= 追踪距离*400) {
+                                
+                                writeMemory(PlayerCameraManager + 0x5c8, sizeof(float), &pitch);
+                                
+                                writeMemory(PlayerCameraManager + 0x5c8 + 4, sizeof(float), &yaw);
+                                
+                            }
+                            
+                        }
+                    }
+                }
+                
+                
+            }
+            
+        }
+        
         //添加到模型
         model.isPm=YES;
         [playerArray addObject:model];
@@ -706,28 +892,31 @@ bool 枪械功能,手持开关,无后座开关,聚点开关,追踪开关,防抖�
     
     
 }
+
 // 读取物资数据
 - (NSMutableArray*)getwzData {
     // 初始化玩家字典
     NSMutableArray *playerArray = @[].mutableCopy;//玩家字典
     
     for (int i = 0; i < wzArray.count; i++) {
-        PUBGPlayerWZ *model=playerArray[i];
+        PUBGPlayerWZ *model=wzArray[i];
         uintptr_t player = model.Player;
-        if (!player) continue;
+        //玩家字典那是1秒一次的 真正绘制可能0.01秒 所以这里要从新更新物资的具体屏幕坐标
         FVector3D WorldLocation = getRelativeLocation(player);
-
-
-        PUBGPlayerWZ *modelwz=[[PUBGPlayerWZ alloc] init];
-        modelwz.WuZhi2D=worldToScreen(WorldLocation, POV, self.canvas);
-        modelwz.JuLi=getDistance(WorldLocation, POV.Location) / 100;
-        modelwz.Name=model.Name;
-        modelwz.Fenlei=model.Fenlei;
-        [playerArray addObject:modelwz];
+        
+        PUBGPlayerWZ *model2=wzArray[i];
+        model2.JuLi = getDistance(WorldLocation, POV.Location) / 100;// 储存计算距离
+        model2.WuZhi2D=worldToScreen(WorldLocation, POV, self.canvas);//存储物资屏幕坐标系
+        model2.Fenlei=model.Fenlei;
+        model2.Name=model.Name;
+        [playerArray addObject:model2];
+       
     }
+    
     return playerArray;
     
 }
+
 //物资名字优化
 static NSDictionary *vehicleNames[20];
 -(NSString*)reName:(NSString*)NameStr ID:(int)ID

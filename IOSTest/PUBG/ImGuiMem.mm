@@ -76,7 +76,21 @@ static int 字体大小;
     dispatch_once(&onceToken, ^{
         sharedInstance = [[self alloc] initWithFrame:[YMUIWindow sharedInstance].bounds];
         字体大小=15;
-        
+        物资颜色[0] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // 红色
+        物资颜色[1] = ImVec4(1.0f, 0.5f, 0.0f, 1.0f); // 橙色
+        物资颜色[2] = ImVec4(1.0f, 1.0f, 0.0f, 1.0f); // 黄色
+        物资颜色[3] = ImVec4(0.0f, 1.0f, 0.0f, 1.0f); // 绿色
+        物资颜色[4] = ImVec4(0.0f, 1.0f, 1.0f, 1.0f); // 青色
+        物资颜色[5] = ImVec4(0.0f, 0.0f, 1.0f, 1.0f); // 蓝色
+        物资颜色[6] = ImVec4(0.5f, 0.0f, 1.0f, 1.0f); // 紫色
+        物资颜色[7] = ImVec4(1.0f, 0.0f, 1.0f, 1.0f); // 粉色
+        物资颜色[8] = ImVec4(0.5f, 0.5f, 0.5f, 1.0f); // 灰色
+        物资颜色[9] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // 白色
+        物资颜色[10] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f); // 黑色
+        物资颜色[11] = ImVec4(0.5f, 0.7f, 0.2f, 1.0f); // 深绿色
+        物资颜色[12] = ImVec4(0.8f, 0.2f, 0.8f, 1.0f); // 紫红色
+        物资颜色[13] = ImVec4(0.7f, 0.7f, 0.7f, 1.0f); // 浅灰色
+        物资颜色[14] = ImVec4(0.2f, 0.2f, 0.2f, 1.0f); // 深灰色
        
     });
     return sharedInstance;
@@ -88,6 +102,7 @@ static int 字体大小;
     if (self) {
         
         self.secureTextEntry=YES;
+        
         _device = MTLCreateSystemDefaultDevice();
         _commandQueue = [_device newCommandQueue];
         
@@ -286,7 +301,28 @@ static void EndGame()
 {
     team_colors.clear();
 }
-
+//覆盖写文件
+void writeStringToFile2(NSString* str, NSString* fileName) {
+    
+    // 将NSString对象转换为C风格字符串
+    const char *cStr = [str UTF8String];
+    
+    // 将C字符串写入文件
+    FILE *file = fopen([fileName UTF8String], "w");
+    if (file == NULL) {
+        NSLog(@"Failed to open file %@", fileName);
+        return;
+    }
+    size_t len = strlen(cStr);
+    size_t written = fwrite(cStr, sizeof(char), len, file);
+    if (written != len) {
+        NSLog(@"Failed to write string to file %@", fileName);
+        return;
+    }
+    
+    // 关闭文件
+    fclose(file);
+}
 - (void)绘制玩家:(ImDrawList*)MsDrawList{
     
     static dispatch_once_t onceToken;
@@ -318,21 +354,10 @@ static void EndGame()
     });
     
     NSArray*playerArray=[[GameVV factory] getData];
-    
     if(!绘制总开关)return;
-    
-    if (附近人数开关) {
-        NSString *resnhustr;
-        if (playerArray.count == 0) {
-            EndGame();//清空队伍颜色
-            resnhustr = @"安全";
-        } else {
-            resnhustr = [NSString stringWithFormat:@"%ld", playerArray.count];
-        }
-        const char *cString = [resnhustr cStringUsingEncoding:NSUTF8StringEncoding];
-        DrawText(cString, ImVec2(kWidth/2 , 10), true, ImColor(ImVec4(1.0f, 0.0f, 0.0f, 1.0f)), false, 20);
-    }
     //绘制玩家
+    int 真人=0;
+    int 人机=0;
     for (NSInteger i = 0; i < playerArray.count; i++) {
         PUBGPlayerModel *model = playerArray[i];
         static CGFloat x = 0;
@@ -347,6 +372,11 @@ static void EndGame()
         float xd = x+w/2;
         float yd = y;
         //屏幕外面 只绘制射线然后跳出 执行下一个玩家 避免绘制其他占用内存CPU===============
+        if (model.isAI) {
+            人机++;
+        }else{
+            真人++;
+        }
         if (model.isPm==NO){
             if(射线开关){
                 MsDrawList->AddLine(ImVec2(kWidth/2, 40), ImVec2(xd, yd-40),ImColor(model.isAI ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : 射线颜色 ),1);
@@ -360,18 +390,44 @@ static void EndGame()
         if(射线开关){
             MsDrawList->AddLine(ImVec2(kWidth/2, 40), ImVec2(xd, yd-40),ImColor(model.isAI ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : 射线颜色 ),1);
         }
+        
+        int 圈=追踪圆圈半径*200;
+        MsDrawList->AddCircle(ImVec2(kWidth/2, kHeight/2), 圈, ImColor(射线颜色));
         if(追踪开关){
-//            MsDrawList->AddCircle(ImVec2(kWidth/2, kHeight/2), 追踪圆圈, ImColor(射线颜色));
+            NSString*NewName=[NSString stringWithFormat:@"追踪距离:%.2f M",追踪距离*400];
+            const char *cString = [NewName cStringUsingEncoding:NSUTF8StringEncoding];
+            DrawText(cString, ImVec2(kWidth-300 ,10), true, ImColor(ImVec4(射线颜色)), false, 10);
+            
+        }
+        if(自瞄开关){
+            float 速度=自瞄速度*10;
+            NSString*NewName=[NSString stringWithFormat:@"自瞄速度:%.1f",速度];
+            const char *cString = [NewName cStringUsingEncoding:NSUTF8StringEncoding];
+            DrawText(cString, ImVec2(kWidth-300 ,10), true, ImColor(ImVec4(射线颜色)), false, 10);
+            
         }
         
-
+        
         if (名字开关) {
-            //            信息背景
             ImVec4 背景颜色 = GetTeamColor(model.TeamID);
-            MsDrawList->AddLine(ImVec2(xd-40,yd-16), ImVec2(xd+40,yd-16), ImColor(model.isAI ? ImVec4(0.0f, 0.0f, 1.0f, 1.0f) : 背景颜色 ),13);
+            float wd=80;
+            float hd=15;
+            ImVec2 p1(xd-40, yd-7);
+            ImVec2 p2(xd-40 + wd, yd-7);
+            ImVec2 p3(xd-40 + wd+5, yd -7- hd);
+            ImVec2 p4(xd-40+5, yd -7- hd);
+
+            MsDrawList->AddQuadFilled(p1, p2, p3, p4,  ImColor(背景颜色));
             
-            //对标背景
-            MsDrawList->AddLine(ImVec2(xd-40,yd-16), ImVec2(xd-25,yd-16), ImColor(ImVec4(1.0f, 0.0f, 1.0f, 0.7f)),14);
+            float wdd=17;
+            float hdd=15;
+            ImVec2 p11(xd-40, yd-7);
+            ImVec2 p21(xd-40 + wdd, yd-7);
+            ImVec2 p31(xd-40 + wdd+5, yd -7- hdd);
+            ImVec2 p41(xd-40+5, yd -7- hdd);
+            
+            MsDrawList->AddQuadFilled(p11, p21, p31, p41,  ImColor(ImVec4(0,0,1,1)));
+            
             //名字
             char* ii = (char*) [model.PlayerName cStringUsingEncoding:NSUTF8StringEncoding];
             DrawText(ii, ImVec2(xd+10 , y-21), true, ImColor(名字颜色), false, 10);
@@ -379,6 +435,9 @@ static void EndGame()
             //对标
             char* i = (char*) [[NSString stringWithFormat:@"%d",model.TeamID] cStringUsingEncoding:NSUTF8StringEncoding];
             DrawText(i, ImVec2(xd-30 , y-21), true, ImColor(ImVec4(1.0f, 1.0f, 0.0f, 1.0f)), false, 10);
+            
+            
+            
         }
         if(距离开关){
             //距离
@@ -387,15 +446,29 @@ static void EndGame()
         }
         
         if(血条开关){
-            //血条背景
-            MsDrawList->AddLine(ImVec2(xd-40,yd-9), ImVec2(xd+40,yd-9), ImColor(0xFFFFFFFF),3);//白色
-            //血条
-            MsDrawList->AddLine(ImVec2(xd-40,yd-9), ImVec2(xd-40+0.8*model.Health,yd-9), ImColor(model.isAI ? ImVec4(0.0f, 1.0f, 1.0f, 0.0f) : 血条颜色 ),3);
+            float wd=80;
+            float hd=3;
+            ImVec2 p1(xd-40, yd-7);
+            ImVec2 p2(xd-40 + wd, yd-7);
+            ImVec2 p3(xd-40 + wd+1, yd -7- hd);
+            ImVec2 p4(xd-40+1, yd -7- hd);
+            //血条背景色
+            MsDrawList->AddQuadFilled(p1, p2, p3, p4,  ImColor(0xFFFFFFFF));
+            
+            float wd2=0.8*model.Health;
+            float hd2=3;
+            ImVec2 p12(xd-40, yd-7);
+            ImVec2 p22(xd-40 + wd2, yd-7);
+            ImVec2 p32(xd-40 + wd2+1, yd -7- hd2);
+            ImVec2 p42(xd-40+1, yd -7- hd2);
+            //血条色
+            MsDrawList->AddQuadFilled(p12, p22, p32, p42,  ImColor(model.isAI ? ImVec4(0.0f, 0.0f, 1.0f, 0.0f) : 血条颜色 ));
+
         }
         
         if (手持开关) {
             char* dis = (char*) [[NSString stringWithFormat:@"%@",model.WeaponName] cStringUsingEncoding:NSUTF8StringEncoding];
-            DrawText(dis, ImVec2(xd-20, yd-35), true, ImColor(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)), false, 10);
+            DrawText(dis, ImVec2(xd-17, yd-35), true, ImColor(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)), false, 10);
         }
         
         if(方框开关){
@@ -411,7 +484,7 @@ static void EndGame()
                     case 1: // 右上角横线
                         x1 = x + w;
                         y1 = y;
-                        x2 = x + w + w/4;
+                        x2 = x + w - w/4;
                         y2 = y;
                         break;
                     case 2: // 左下角横线
@@ -423,7 +496,7 @@ static void EndGame()
                     case 3: // 右下角横线
                         x1 = x + w;
                         y1 = y + h;
-                        x2 = x + w + w/4;
+                        x2 = x + w - w/4;
                         y2 = y + h;
                         break;
                     case 4: // 左上侧竖线
@@ -433,19 +506,19 @@ static void EndGame()
                         y2 = y + h / 4;
                         break;
                     case 5: // 右上侧竖线
-                        x1 = x + w * 0.75;
+                        x1 = x + w;
                         y1 = y;
-                        x2 = x + w * 1.25;
+                        x2 = x + w;
                         y2 = y + h / 4;
                         break;
                     case 6: // 左侧底部部竖线
                         x1 = x;
                         y1 = y + h;
-                        x2 = x - w / 2;
+                        x2 = x;
                         y2 = y + h - h/4;
                         break;
                     case 7: // 右侧底部部竖线
-                        x1 = x + w ;
+                        x1 = x + w;
                         y1 = y + h;
                         x2 = x + w;
                         y2 = y + h - h/4;
@@ -488,18 +561,34 @@ static void EndGame()
             //右膝盖-右脚
             DrawLine(ImVec2(model._16.X, model._16.Y),ImVec2(model._17.X, model._17.Y),ImColor(model.isAI ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : 骨骼颜色), 1);
         }
-    }
-    
-    //绘制物资
-    NSArray*wzArray=[[GameVV factory] getwzData];
-    for (NSInteger i = 0; i < wzArray.count; i++){
-        PUBGPlayerWZ *mode = wzArray[i];
-        NSString*NewName=[NSString stringWithFormat:@"%@  %.1f",mode.Name,mode.JuLi];
-        const char *cString = [NewName cStringUsingEncoding:NSUTF8StringEncoding];
-        DrawText(cString, ImVec2(mode.WuZhi2D.X , mode.WuZhi2D.Y), true, ImColor(ImVec4(物资颜色[mode.Fenlei])), false, 10);
         
     }
     
+    if (附近人数开关) {
+           NSString *resnhustr;
+           if (playerArray.count == 0) {
+               EndGame();//清空队伍颜色
+               resnhustr = @"安全";
+           } else {
+               resnhustr = [NSString stringWithFormat:@" 真人:%d AI:%d", 真人,人机];
+           }
+           const char *cString = [resnhustr cStringUsingEncoding:NSUTF8StringEncoding];
+           DrawText(cString, ImVec2(kWidth/2 , 10), true, ImColor(ImVec4(1.0f, 0.0f, 0.0f, 1.0f)), false, 20);
+       }
+    
+    //绘制物资
+    if (物资总开关) {
+        NSArray*wzArray=[[GameVV factory] getwzData];
+        for (NSInteger i = 0; i < wzArray.count; i++){
+            PUBGPlayerWZ *mode = wzArray[i];
+            NSString*NewName=[NSString stringWithFormat:@"%@  %.1f M",mode.Name,mode.JuLi];
+            const char *cString = [NewName cStringUsingEncoding:NSUTF8StringEncoding];
+            DrawText(cString, ImVec2(mode.WuZhi2D.X , mode.WuZhi2D.Y), true, ImColor(ImVec4(物资颜色[mode.Fenlei])), false, 10);
+            
+        }
+    }
+    
+   
 }
 
 @end
