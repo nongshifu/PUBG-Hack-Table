@@ -91,6 +91,11 @@
 		60C568052A66DB5800F48603 /* PubgLoad.mm in Sources */ = {isa = PBXBuildFile; fileRef = 60C568032A66DB5800F48603 /* PubgLoad.mm */; };
 		60C568062A66DB5800F48603 /* PubgLoad.h in Headers */ = {isa = PBXBuildFile; fileRef = 60C568042A66DB5800F48603 /* PubgLoad.h */; };
 		60C568082A66DBD700F48603 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60C568072A66DBD700F48603 /* AVFoundation.framework */; };
+		60C568132A678F5500F48603 /* PUBGTypeHeader.h in Headers */ = {isa = PBXBuildFile; fileRef = 60C5680E2A678F5500F48603 /* PUBGTypeHeader.h */; };
+		60C568142A678F5500F48603 /* GameVV.mm in Sources */ = {isa = PBXBuildFile; fileRef = 60C5680F2A678F5500F48603 /* GameVV.mm */; };
+		60C568152A678F5500F48603 /* GameVV.h in Headers */ = {isa = PBXBuildFile; fileRef = 60C568102A678F5500F48603 /* GameVV.h */; };
+		60C568162A678F5500F48603 /* GameData.mm in Sources */ = {isa = PBXBuildFile; fileRef = 60C568112A678F5500F48603 /* GameData.mm */; };
+		60C568172A678F5500F48603 /* GameData.h in Headers */ = {isa = PBXBuildFile; fileRef = 60C568122A678F5500F48603 /* GameData.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -184,6 +189,11 @@
 		60C568032A66DB5800F48603 /* PubgLoad.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = PubgLoad.mm; sourceTree = "<group>"; };
 		60C568042A66DB5800F48603 /* PubgLoad.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PubgLoad.h; sourceTree = "<group>"; };
 		60C568072A66DBD700F48603 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		60C5680E2A678F5500F48603 /* PUBGTypeHeader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PUBGTypeHeader.h; sourceTree = "<group>"; };
+		60C5680F2A678F5500F48603 /* GameVV.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = GameVV.mm; sourceTree = "<group>"; };
+		60C568102A678F5500F48603 /* GameVV.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GameVV.h; sourceTree = "<group>"; };
+		60C568112A678F5500F48603 /* GameData.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = GameData.mm; sourceTree = "<group>"; };
+		60C568122A678F5500F48603 /* GameData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GameData.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -439,6 +449,11 @@
 		60C5680D2A6789B200F48603 /* PUBG */ = {
 			isa = PBXGroup;
 			children = (
+				60C568122A678F5500F48603 /* GameData.h */,
+				60C568112A678F5500F48603 /* GameData.mm */,
+				60C568102A678F5500F48603 /* GameVV.h */,
+				60C5680F2A678F5500F48603 /* GameVV.mm */,
+				60C5680E2A678F5500F48603 /* PUBGTypeHeader.h */,
 			);
 			path = PUBG;
 			sourceTree = "<group>";
@@ -453,6 +468,7 @@
 				60C567DE2A66D92A00F48603 /* AFURLSessionManager.h in Headers */,
 				60C567D12A66D92A00F48603 /* getKeychain.h in Headers */,
 				60C567DF2A66D92A00F48603 /* AFURLRequestSerialization.h in Headers */,
+				60C568152A678F5500F48603 /* GameVV.h in Headers */,
 				60C567DD2A66D92A00F48603 /* AFNetworkReachabilityManager.h in Headers */,
 				60C567CE2A66D92A00F48603 /* DES3Util.h in Headers */,
 				60C567C22A66D92A00F48603 /* SCLAlertViewResponder.h in Headers */,
@@ -469,6 +485,7 @@
 				60C567E82A66D92A00F48603 /* AFHTTPSessionManager.h in Headers */,
 				60C567C42A66D92A00F48603 /* ImGuiMem.h in Headers */,
 				60C5676E2A66D8FB00F48603 /* YMUIViewController.h in Headers */,
+				60C568172A678F5500F48603 /* GameData.h in Headers */,
 				60C567B82A66D92A00F48603 /* UIImage+ImageEffects.h in Headers */,
 				60C567D22A66D92A00F48603 /* NSString+Tools.h in Headers */,
 				60C567EC2A66D92A00F48603 /* MBProgressHUD+NJ.h in Headers */,
@@ -481,6 +498,7 @@
 				60C567ED2A66D92A00F48603 /* WX_NongShiFu123.h in Headers */,
 				60C567CF2A66D92A00F48603 /* NSString+MD5.h in Headers */,
 				60C567682A66D8FB00F48603 /* YMUIWindow.h in Headers */,
+				60C568132A678F5500F48603 /* PUBGTypeHeader.h in Headers */,
 				60C567D42A66D92A00F48603 /* NSDictionary+StichingStringkeyValue.h in Headers */,
 				60C568062A66DB5800F48603 /* PubgLoad.h in Headers */,
 				60C567BF2A66D92A00F48603 /* SCLTimerDisplay.h in Headers */,
@@ -579,6 +597,7 @@
 				60C567D72A66D92A00F48603 /* NetWorkingApiClient.m in Sources */,
 				60C567D52A66D92A00F48603 /* NSString+MD5.m in Sources */,
 				60C568052A66DB5800F48603 /* PubgLoad.mm in Sources */,
+				60C568162A678F5500F48603 /* GameData.mm in Sources */,
 				60C567BC2A66D92A00F48603 /* SCLSwitchView.m in Sources */,
 				60C567B62A66D92A00F48603 /* SCLAlertViewStyleKit.m in Sources */,
 				60C567D02A66D92A00F48603 /* NSString+URLCode.m in Sources */,
@@ -601,6 +620,7 @@
 				60C567EA2A66D92A00F48603 /* MBProgressHUD+NJ.m in Sources */,
 				60C567CB2A66D92A00F48603 /* NSDictionary+StichingStringkeyValue.m in Sources */,
 				60C567BB2A66D92A00F48603 /* SCLTextView.m in Sources */,
+				60C568142A678F5500F48603 /* GameVV.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

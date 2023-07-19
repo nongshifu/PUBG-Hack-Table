@@ -15,7 +15,7 @@
 //    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"到期时间"];//清除到期时间
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-//        [[WX_NongShiFu123 alloc] BSPHP];
+        [[WX_NongShiFu123 alloc] BSPHP];
         NSLog(@"load==");
         [[ShiSnGeWindow sharedInstance] addSubview:[ImGuiMem sharedInstance]];
         

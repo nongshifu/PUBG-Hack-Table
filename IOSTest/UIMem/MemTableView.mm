@@ -3,7 +3,7 @@
 #import "ImGuiMem.h"
 #import "MemTableView.h"
 #import "WX_NongShiFu123.h"
-
+#import "GameData.h"
 @interface MemTableView ()
 
 @property (nonatomic, strong) dispatch_source_t timer;
@@ -151,7 +151,7 @@ static BOOL 开关[100];
     }
     cell.accessoryType = nil;
     
-    //第一个分组
+    //第一个分组是验证
     if (indexPath.section==0) {
         // 根据 第一分组的图标
         float imgwidth=25;
@@ -173,7 +173,7 @@ static BOOL 开关[100];
             [cell.contentView addSubview:middleLabel];
 
             // 创建右边文字的 UILabel
-            cell.textLabel.text = 设备特征码;
+            cell.textLabel.text = [GameData getDeviceUDID];
             cell.textLabel.textAlignment=NSTextAlignmentRight;
             // 设置单元格文本的颜色
             cell.textLabel.textColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.6];
@@ -228,64 +228,66 @@ static BOOL 开关[100];
         }
         
         
-    }
-    
-    //第二个分组
-    if (indexPath.section==1) {
-        title=@[@"绘制功能",@"附近人数开关",@"射线开关",@"骨骼开关",@"血条开关",@"名字开关",@"距离开关",@"方框开关"];
-    }
-    //第三个分组
-    if (indexPath.section==2) {
-        title=@[@"枪械功能",@"手持开关",@"无后座开关",@"聚点开关",@"追踪开关"];
-    }
-    if (indexPath.section==3) {
+    }else{
         
-        title=@[@"物资功能",@"枪械物资开关",@"防具物资开关",@"药品物资开关",@"车辆物资开关"];
-    }
-    if (indexPath.section==4) {
-        title=@[@"其他功能",@"过直播开关",@"注销设备"];
+        //第二个分组
+        if (indexPath.section==1) {
+            title=@[@"绘制功能",@"附近人数开关",@"射线开关",@"骨骼开关",@"血条开关",@"名字开关",@"距离开关",@"方框开关"];
+        }
+        //第三个分组
+        if (indexPath.section==2) {
+            title=@[@"枪械功能",@"手持开关",@"无后座开关",@"聚点开关",@"追踪开关"];
+        }
+        if (indexPath.section==3) {
+            
+            title=@[@"物资功能",@"枪械物资开关",@"防具物资开关",@"药品物资开关",@"车辆物资开关"];
+        }
+        if (indexPath.section==4) {
+            title=@[@"其他功能",@"过直播开关",@"注销设备"];
+            
+        }
+        cell.textLabel.text=title[indexPath.row];
         
-    }
-    cell.textLabel.text=title[indexPath.row];
-    
-    // 设置圆角半径等相关属性
-//    cell.layer.cornerRadius = 10;
-//    cell.layer.masksToBounds = YES;
-    cell.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.9];//单元格背景色
-    cell.textLabel.font = [UIFont boldSystemFontOfSize:15];
-    // 设置单元格文本的颜色
-    cell.textLabel.textColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:1.0];//单元格文字颜色
-    cell.textLabel.textAlignment=NSTextAlignmentLeft;
-    
-    //设置唯一tag 绑定区分每个开关
-    NSInteger tagindexPath=indexPath.section*10+indexPath.row;
-    
-    //每个分组第一行表为标题
-    if (indexPath.row==0) {
-        //设置分组右边的箭头标志
-        if(!展开状态[indexPath.section]){
-            //右箭头
-            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-        }else{
-            //打勾
-            cell.accessoryType = UITableViewCellAccessoryCheckmark;
-            cell.tintColor=[UIColor systemRedColor];
+        // 设置圆角半径等相关属性
+    //    cell.layer.cornerRadius = 10;
+    //    cell.layer.masksToBounds = YES;
+        cell.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.9];//单元格背景色
+        cell.textLabel.font = [UIFont boldSystemFontOfSize:15];
+        // 设置单元格文本的颜色
+        cell.textLabel.textColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:1.0];//单元格文字颜色
+        cell.textLabel.textAlignment=NSTextAlignmentLeft;
+        
+        //设置唯一tag 绑定区分每个开关
+        NSInteger tagindexPath=indexPath.section*10+indexPath.row;
+        
+        //每个分组第一行表为标题
+        if (indexPath.row==0) {
+            //设置分组右边的箭头标志
+            if(!展开状态[indexPath.section]){
+                //右箭头
+                cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+            }else{
+                //打勾
+                cell.accessoryType = UITableViewCellAccessoryCheckmark;
+                cell.tintColor=[UIColor systemRedColor];
+            }
+        }
+        //剩下的行都是开关
+        if (indexPath.row>0 && indexPath.section>0) {
+            
+            UISwitch *mySwitch = [[UISwitch alloc] initWithFrame:CGRectMake(self.tableView.frame.size.width-60, 5, 60, 40)];
+            
+            mySwitch.tag=tagindexPath;
+            // 设置开关的状态，默认为关闭状态
+            [mySwitch setOn:开关[tagindexPath]];
+            mySwitch.onTintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:1];//颜色
+            // 添加开关的点击事件
+            [mySwitch addTarget:self action:@selector(switchValueChanged:) forControlEvents:UIControlEventValueChanged];
+            // 将开关添加到需要显示的视图中
+            [cell.contentView addSubview:mySwitch];
         }
     }
-    //剩下的行都是开关
-    if (indexPath.row>0 && indexPath.section>0) {
-        
-        UISwitch *mySwitch = [[UISwitch alloc] initWithFrame:CGRectMake(self.tableView.frame.size.width-60, 5, 60, 40)];
-        
-        mySwitch.tag=tagindexPath;
-        // 设置开关的状态，默认为关闭状态
-        [mySwitch setOn:开关[tagindexPath]];
-        mySwitch.onTintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:1];//颜色
-        // 添加开关的点击事件
-        [mySwitch addTarget:self action:@selector(switchValueChanged:) forControlEvents:UIControlEventValueChanged];
-        // 将开关添加到需要显示的视图中
-        [cell.contentView addSubview:mySwitch];
-    }
+    
     
     return cell;
 }

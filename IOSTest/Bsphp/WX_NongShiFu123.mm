@@ -114,84 +114,84 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
         [self yanzhengAndUseIt:km];
     }else{
         
-        if ([弹窗类型 containsString:@"YES"]) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                //系统弹窗
-                UIViewController * rootViewController = [[[UIApplication sharedApplication] keyWindow] rootViewController];
-                WX_NongShiFu123 *alert = [WX_NongShiFu123 alertControllerWithTitle:nil message:string preferredStyle:UIAlertControllerStyleAlert];
-                [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
-                    textField.placeholder = @"请输入激活码";
-                    textField.secureTextEntry = NO;
-                    textField.borderStyle = UITextBorderStyleRoundedRect;
-                    textField.clearButtonMode = UITextFieldViewModeAlways;
-                    textField.layer.masksToBounds=YES;
-                }];
-                UIAlertAction *cancelAction;
-                if (软件网页地址.length>5) {
-                    cancelAction = [UIAlertAction actionWithTitle:@"购买" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
-                        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:^(BOOL success) {
-                            exit(0);
-                        }];
-                    }];
-                }else{
-                    cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
-                        // 取消操作
-                        exit(0);
-                    }];
-                }
-                UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                    // 确定操作
-                    UITextField *textField1 = alert.textFields.firstObject;
-                    MyLog(@"输入框1：%@", textField1.text);
-                    if (textField1.text.length ==0 ) {
-                        MyLog(@"输入框内容为空");
-                        // 输入框内容为空，做出相应提示或处理
-                        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                            [self YZTC:@"输入内容为空"];
-                        });
-                    }else{
-                        [self yanzhengAndUseIt:textField1.text];
-                    }
-                    
-                }];
-                
-                [alert addAction:cancelAction];
-                [alert addAction:okAction];
-                
-                [rootViewController presentViewController:alert animated:YES completion:nil];
-            });
-            
-            
-        }else{
-            dispatch_async(dispatch_get_main_queue(), ^{
-                //SCL弹窗
-                SCLAlertView *alert =  [[SCLAlertView alloc] initWithNewWindow];
-                alert.customViewColor=[UIColor systemGreenColor];
-                alert.shouldDismissOnTapOutside = NO;
-                SCLTextView *textF =   [alert addTextField:@"请在30秒内填写授权码"setDefaultText:nil];
-                [alert addButton:@"粘贴" validationBlock:^BOOL{
-                    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-                    textF.text =pasteboard.string;
-                    return NO;
-                }actionBlock:^{}];
-                if (软件网页地址.length>5) {
-                    [alert addButton:@"购买" actionBlock:^{
-                        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:nil];
-                    }];
-                }
-                
-                [alert alertDismissAnimationIsCompleted:^{
-                    if (textF.text.length==0) {
-                        [self YZTC:@"请输入激活码"];
-                    }else{
-                        [self yanzhengAndUseIt:textF.text];
-                    }
-                }];
-                [alert showEdit:@"授权" subTitle:string closeButtonTitle:@"授权" duration:0];
-            });
-            
-            
-        }
+//        if ([弹窗类型 containsString:@"YES"]) {
+//            dispatch_async(dispatch_get_main_queue(), ^{
+//                //系统弹窗
+//                UIViewController * rootViewController = [[[UIApplication sharedApplication] keyWindow] rootViewController];
+//                WX_NongShiFu123 *alert = [WX_NongShiFu123 alertControllerWithTitle:nil message:string preferredStyle:UIAlertControllerStyleAlert];
+//                [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+//                    textField.placeholder = @"请输入激活码";
+//                    textField.secureTextEntry = NO;
+//                    textField.borderStyle = UITextBorderStyleRoundedRect;
+//                    textField.clearButtonMode = UITextFieldViewModeAlways;
+//                    textField.layer.masksToBounds=YES;
+//                }];
+//                UIAlertAction *cancelAction;
+//                if (软件网页地址.length>5) {
+//                    cancelAction = [UIAlertAction actionWithTitle:@"购买" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+//                        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:^(BOOL success) {
+//                            exit(0);
+//                        }];
+//                    }];
+//                }else{
+//                    cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+//                        // 取消操作
+//                        exit(0);
+//                    }];
+//                }
+//                UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+//                    // 确定操作
+//                    UITextField *textField1 = alert.textFields.firstObject;
+//                    MyLog(@"输入框1：%@", textField1.text);
+//                    if (textField1.text.length ==0 ) {
+//                        MyLog(@"输入框内容为空");
+//                        // 输入框内容为空，做出相应提示或处理
+//                        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//                            [self YZTC:@"输入内容为空"];
+//                        });
+//                    }else{
+//                        [self yanzhengAndUseIt:textField1.text];
+//                    }
+//                    
+//                }];
+//                
+//                [alert addAction:cancelAction];
+//                [alert addAction:okAction];
+//                
+//                [rootViewController presentViewController:alert animated:YES completion:nil];
+//            });
+//            
+//            
+//        }else{
+//            dispatch_async(dispatch_get_main_queue(), ^{
+//                //SCL弹窗
+//                SCLAlertView *alert =  [[SCLAlertView alloc] initWithNewWindow];
+//                alert.customViewColor=[UIColor systemGreenColor];
+//                alert.shouldDismissOnTapOutside = NO;
+//                SCLTextView *textF =   [alert addTextField:@"请在30秒内填写授权码"setDefaultText:nil];
+//                [alert addButton:@"粘贴" validationBlock:^BOOL{
+//                    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+//                    textF.text =pasteboard.string;
+//                    return NO;
+//                }actionBlock:^{}];
+//                if (软件网页地址.length>5) {
+//                    [alert addButton:@"购买" actionBlock:^{
+//                        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:nil];
+//                    }];
+//                }
+//                
+//                [alert alertDismissAnimationIsCompleted:^{
+//                    if (textF.text.length==0) {
+//                        [self YZTC:@"请输入激活码"];
+//                    }else{
+//                        [self yanzhengAndUseIt:textF.text];
+//                    }
+//                }];
+//                [alert showEdit:@"授权" subTitle:string closeButtonTitle:@"授权" duration:0];
+//            });
+//            
+//            
+//        }
     }
     
 }
