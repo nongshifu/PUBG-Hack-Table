@@ -1,23 +1,23 @@
 
 #import <UIKit/UIKit.h>
 #import "ImGuiMem.h"
-#import "ZhuBiaoGe.h"
+#import "MemTableView.h"
 #import "WX_NongShiFu123.h"
 
-@interface ZhuBiaoGe ()
+@interface MemTableView ()
 
 @property (nonatomic, strong) dispatch_source_t timer;
 
 @end
 float 顶头间隔=30;
 static bool 展开状态[100];
-@implementation ZhuBiaoGe
+@implementation MemTableView
 
 + (instancetype)sharedInstance {
-    static ZhuBiaoGe *instance = nil;
+    static MemTableView *instance = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        instance = [[ZhuBiaoGe alloc] initWithStyle:UITableViewStylePlain];
+        instance = [[MemTableView alloc] initWithStyle:UITableViewStylePlain];
     });
     return instance;
 }
@@ -30,7 +30,7 @@ static bool 展开状态[100];
     // 设置圆角半径
     self.tableView.layer.cornerRadius = 10; // 设置圆角半径
     self.tableView.layer.masksToBounds = YES; // 剪裁超出边界的部分
-    self.tableView.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0];//表格背景设置透明
+    self.tableView.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.3];//表格背景设置透明
     [self.tableView registerClass:[UITableViewCell class] forCellReuseIdentifier:@"Cell"];
     
     // 设置分组标题不悬浮置顶
@@ -84,27 +84,47 @@ static bool 展开状态[100];
 - (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
     cell.separatorInset = UIEdgeInsetsZero;
 }
+#pragma mark - 分组头部
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
     UIView *headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, tableView.frame.size.width, 顶头间隔)];
-    headerView.backgroundColor = [UIColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:0];//顶部分组背景设置为透明
-    // 设置圆角半径等相关属性
-    headerView.layer.cornerRadius = 10;
-    headerView.layer.masksToBounds = YES;
-
+    headerView.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.7];//顶部分组背景设置为透明
+//    headerView.layer.cornerRadius = 10;
+//    headerView.layer.masksToBounds = YES;
+    
     UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 0, headerView.frame.size.width - 15, headerView.frame.size.height)];
     titleLabel.textColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.7];//颜色
     titleLabel.font = [UIFont boldSystemFontOfSize:13.0f];
     titleLabel.text = [self tableView:tableView titleForHeaderInSection:section];
 
     [headerView addSubview:titleLabel];
-    // 添加一个tap gesture recognizer
-    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(sectionHeaderTapped:)];
-    [headerView addGestureRecognizer:tapGesture];
-    headerView.tag = section;
+    
+    // 设置圆角半径等相关属性
+    
+    CGFloat cornerRadius = 10;
+    UIRectCorner corners = UIRectCornerTopLeft | UIRectCornerTopRight;
+    UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:headerView.bounds byRoundingCorners:corners cornerRadii:CGSizeMake(cornerRadius, cornerRadius)];
+    CAShapeLayer *maskLayer = [CAShapeLayer layer];
+    maskLayer.frame = headerView.bounds;
+    maskLayer.path = maskPath.CGPath;
+    headerView.layer.mask = maskLayer;
+    
+
 
     return headerView;
 }
-
+#pragma mark - 分组底部
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
+    UIView *footerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, tableView.frame.size.width, 10)];
+    footerView.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.7];//底部分组背景
+    CGFloat cornerRadius = 10;
+    UIRectCorner corners = UIRectCornerBottomLeft | UIRectCornerBottomRight;
+    UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:footerView.bounds byRoundingCorners:corners cornerRadii:CGSizeMake(cornerRadius, cornerRadius)];
+    CAShapeLayer *maskLayer = [CAShapeLayer layer];
+    maskLayer.frame = footerView.bounds;
+    maskLayer.path = maskPath.CGPath;
+    footerView.layer.mask = maskLayer;
+    return footerView;
+}
 #pragma mark - 表格行高度
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     return 40; // 使用默认行高
@@ -119,7 +139,7 @@ static BOOL 开关[100];
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     // 获取重用的单元格
     UITableViewCell *cell;
-    
+    NSArray * title;
     cell = [tableView dequeueReusableCellWithIdentifier:@"Cell" forIndexPath:indexPath];
     
     // 清空单元格的子视图
@@ -129,7 +149,7 @@ static BOOL 开关[100];
     for (UISwitch *subView in cell.contentView.subviews) {
         [subView removeFromSuperview];
     }
-    
+    cell.accessoryType = nil;
     
     //第一个分组
     if (indexPath.section==0) {
@@ -209,17 +229,18 @@ static BOOL 开关[100];
         
         
     }
-        NSArray * title;
+    
     //第二个分组
     if (indexPath.section==1) {
         title=@[@"绘制功能",@"附近人数开关",@"射线开关",@"骨骼开关",@"血条开关",@"名字开关",@"距离开关",@"方框开关"];
     }
     //第三个分组
     if (indexPath.section==2) {
-        title=@[@"枪械功能",@"手持开关",@"无后座开关",@"聚点开关",@"防抖开关"];
+        title=@[@"枪械功能",@"手持开关",@"无后座开关",@"聚点开关",@"追踪开关"];
     }
     if (indexPath.section==3) {
-        title=@[@"物资功能",@"载具开关",@"手雷预警开关",@"高级物资开关",@"倍镜开关"];
+        
+        title=@[@"物资功能",@"枪械物资开关",@"防具物资开关",@"药品物资开关",@"车辆物资开关"];
     }
     if (indexPath.section==4) {
         title=@[@"其他功能",@"过直播开关",@"注销设备"];
@@ -228,12 +249,14 @@ static BOOL 开关[100];
     cell.textLabel.text=title[indexPath.row];
     
     // 设置圆角半径等相关属性
-    cell.layer.cornerRadius = 10;
-    cell.layer.masksToBounds = YES;
-    cell.textLabel.font = [UIFont boldSystemFontOfSize:13];
+//    cell.layer.cornerRadius = 10;
+//    cell.layer.masksToBounds = YES;
+    cell.backgroundColor = [UIColor colorWithRed:1 green:1 blue:1 alpha:0.9];//单元格背景色
+    cell.textLabel.font = [UIFont boldSystemFontOfSize:15];
     // 设置单元格文本的颜色
-    cell.textLabel.textColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:1];//颜色
+    cell.textLabel.textColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:1.0];//单元格文字颜色
     cell.textLabel.textAlignment=NSTextAlignmentLeft;
+    
     //设置唯一tag 绑定区分每个开关
     NSInteger tagindexPath=indexPath.section*10+indexPath.row;
     
@@ -250,9 +273,10 @@ static BOOL 开关[100];
         }
     }
     //剩下的行都是开关
-    if (indexPath.row>0) {
-        cell.accessoryType = nil;
+    if (indexPath.row>0 && indexPath.section>0) {
+        
         UISwitch *mySwitch = [[UISwitch alloc] initWithFrame:CGRectMake(self.tableView.frame.size.width-60, 5, 60, 40)];
+        
         mySwitch.tag=tagindexPath;
         // 设置开关的状态，默认为关闭状态
         [mySwitch setOn:开关[tagindexPath]];
@@ -281,12 +305,12 @@ static BOOL 开关[100];
 }
 #pragma mark - 滚动相关
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
-    CGFloat sectionHeaderHeight = 顶头间隔; // 替换为你的分组头高度值
-    if (scrollView.contentOffset.y <= sectionHeaderHeight && scrollView.contentOffset.y >= 0) {
-        scrollView.contentInset = UIEdgeInsetsMake(-scrollView.contentOffset.y, 0, 0, 0);
-    } else if (scrollView.contentOffset.y >= sectionHeaderHeight) {
-        scrollView.contentInset = UIEdgeInsetsMake(-sectionHeaderHeight, 0, 0, 0);
-    }
+//    CGFloat sectionHeaderHeight = 顶头间隔; // 替换为你的分组头高度值
+//    if (scrollView.contentOffset.y <= sectionHeaderHeight && scrollView.contentOffset.y >= 0) {
+//        scrollView.contentInset = UIEdgeInsetsMake(-scrollView.contentOffset.y, 0, 0, 0);
+//    } else if (scrollView.contentOffset.y >= sectionHeaderHeight) {
+//        scrollView.contentInset = UIEdgeInsetsMake(-sectionHeaderHeight, 0, 0, 0);
+//    }
 }
 //控件调用
 
@@ -298,7 +322,7 @@ static BOOL 开关[100];
     //过直播
     if (selectedIndex==41) {
         NSLog(@"点击了过直播开关");
-//        [ImGuiMem sharedInstance].secureTextEntry=Switch.on;
+        [ImGuiMem sharedInstance].secureTextEntry=Switch.on;
         
     }
     if(selectedIndex==10){

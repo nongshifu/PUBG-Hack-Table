@@ -8,8 +8,8 @@
 #import <UIKit/UIKit.h>
 
 #import "ImGuiMem.h"
-#import "ZhuBiaoGe.h"
-#import "TableViewController.h"
+#import "MemTableView.h"
+
 
 @interface ImGuiMem ()
 
@@ -62,13 +62,21 @@
     UIPinchGestureRecognizer *pinchGesture = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(handlePinchGesture:)];
     // 将捏合手势识别器添加到视图中
     [self addGestureRecognizer:pinchGesture];
+    
+    //双击手势
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] init];
+    tap.numberOfTapsRequired = 2;//点击次数
+    tap.numberOfTouchesRequired = 1;//手指数
+    [tap addTarget:self action:@selector(showHide)];
+    [self addGestureRecognizer:tap];
+    
 }
 
 -(void)mem{
     
     //加载主菜单表格视图
-    ZhuBiaoGe *memTableVC = [ZhuBiaoGe sharedInstance];
-    memTableVC.view.frame=CGRectMake(10, 顶头间隔+10, self.bounds.size.width-20, self.bounds.size.height-顶头间隔-20);
+    MemTableView *memTableVC = [MemTableView sharedInstance];
+    memTableVC.view.frame=CGRectMake(10, 顶头间隔+20, self.bounds.size.width-20, self.bounds.size.height-顶头间隔-30);
     [self.subviews.firstObject addSubview:memTableVC.view];
     
     UIView*logo=[[UIView alloc] initWithFrame:CGRectMake(0, 0, self.frame.size.width, 40)];//顶头logo Hello, world! 高度
@@ -88,11 +96,15 @@
 
 }
 
+
+- (void)showHide {
+   self.hidden=!self.hidden;
+}
+
 //禁用键盘
 - (BOOL)canBecomeFirstResponder {
     return NO;
 }
-
 
 //拖动手势方法
 - (void)movingBtn:(UIPanGestureRecognizer *)recognizer{

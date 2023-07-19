@@ -3,7 +3,7 @@
 #import "ImGuiMem.h"
 #import "ShiSnGeWindow.h"
 #import "YMUIWindow.h"
-#import "ZhuBiaoGe.h"
+#import "MemTableView.h"
 @implementation NSObject (mian)
 +(void)load
 {

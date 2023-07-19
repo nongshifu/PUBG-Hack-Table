@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface ZhuBiaoGe : UITableViewController<UITableViewDelegate,UITableViewDataSource>
+@interface MemTableView : UITableViewController<UITableViewDelegate,UITableViewDataSource>
 + (instancetype)sharedInstance;
 extern float 顶头间隔;
 @end
