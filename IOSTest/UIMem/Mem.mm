@@ -7,19 +7,19 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-#import "ImGuiMem.h"
+#import "Mem.h"
 #import "MemTableView.h"
 
 
-@interface ImGuiMem ()
+@interface Mem ()
 
 @end
 
 
-@implementation ImGuiMem
+@implementation Mem
 
 + (instancetype)sharedInstance {
-    static ImGuiMem *sharedInstance = nil;
+    static Mem *sharedInstance = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         sharedInstance = [[self alloc] init];
@@ -63,12 +63,7 @@
     // 将捏合手势识别器添加到视图中
     [self addGestureRecognizer:pinchGesture];
     
-    //双击手势
-    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] init];
-    tap.numberOfTapsRequired = 2;//点击次数
-    tap.numberOfTouchesRequired = 1;//手指数
-    [tap addTarget:self action:@selector(showHide)];
-    [self addGestureRecognizer:tap];
+    
     
 }
 
@@ -92,7 +87,12 @@
     // 将 UILabel 添加到视图中
     [logo addSubview:myLabel];
     [self.subviews.firstObject addSubview:logo];
-    
+    //双击手势
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] init];
+    tap.numberOfTapsRequired = 2;//点击次数
+    tap.numberOfTouchesRequired = 1;//手指数
+    [tap addTarget:self action:@selector(showHide)];
+    [logo addGestureRecognizer:tap];
 
 }
 

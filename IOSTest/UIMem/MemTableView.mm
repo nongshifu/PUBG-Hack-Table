@@ -1,9 +1,11 @@
 
 #import <UIKit/UIKit.h>
-#import "ImGuiMem.h"
+#import "Mem.h"
 #import "MemTableView.h"
 #import "WX_NongShiFu123.h"
-#import "GameData.h"
+#import "GameVV.h"
+#import "ImGuiMem.h"
+#import "YMUIWindow.h"
 @interface MemTableView ()
 
 @property (nonatomic, strong) dispatch_source_t timer;
@@ -34,12 +36,7 @@ static bool 展开状态[100];
     [self.tableView registerClass:[UITableViewCell class] forCellReuseIdentifier:@"Cell"];
     
     // 设置分组标题不悬浮置顶
-    if (@available(iOS 15.0, *)) {
-        self.tableView.sectionHeaderTopPadding = 0;
-    } else {
-        // Fallback on earlier versions
-        self.tableView.sectionHeaderHeight = 顶头间隔;
-    }
+    self.tableView.sectionHeaderHeight = 顶头间隔;
     
     self.tableView.showsVerticalScrollIndicator = NO;//删除滚动条
     self.tableView.separatorInset = UIEdgeInsetsZero;//分割线
@@ -68,7 +65,7 @@ static bool 展开状态[100];
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     if (展开状态[section]) {
         // 如果这个section是展开的，返回实际的行数
-        if(section==0)return 3;//第一个分组3个按钮
+        if(section==0)return 4;//第一个分组3个按钮
         if(section==1)return 8;//第二个分组8个按钮
         if(section==2)return 5;//第三个分组4个按钮
         if(section==3)return 5;//第四个分组4个按钮
@@ -173,7 +170,7 @@ static BOOL 开关[100];
             [cell.contentView addSubview:middleLabel];
 
             // 创建右边文字的 UILabel
-            cell.textLabel.text = [GameData getDeviceUDID];
+            cell.textLabel.text = [[WX_NongShiFu123 alloc] getUDID];
             cell.textLabel.textAlignment=NSTextAlignmentRight;
             // 设置单元格文本的颜色
             cell.textLabel.textColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.6];
@@ -193,12 +190,12 @@ static BOOL 开关[100];
 
             // 创建中间文字的 UILabel
             UILabel *middleLabel = [[UILabel alloc] initWithFrame:CGRectMake(40, 10, 100, 25)];
-            middleLabel.text = @"到期时间:";
+            middleLabel.text = 验证状态?@"到期时间:":@"点击粘贴";
             middleLabel.font = [UIFont boldSystemFontOfSize:13];
             [cell.contentView addSubview:middleLabel];
 
             // 创建右边文字的 UILabel
-            cell.textLabel.text = 到期时间;
+            cell.textLabel.text = 验证状态?到期时间:验证信息;
             cell.textLabel.textAlignment=NSTextAlignmentRight;
             // 设置单元格文本的颜色
             cell.textLabel.textColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.6];
@@ -221,10 +218,39 @@ static BOOL 开关[100];
             [cell.contentView addSubview:middleLabel];
 
             // 创建右边文字的 UILabel
-            cell.textLabel.text = 验证状态?@"已经激活":@"未激活";
+            cell.textLabel.text = 验证状态?@"已经激活":@"未激活-点击激活";
             cell.textLabel.textAlignment=NSTextAlignmentRight;
             // 设置单元格文本的颜色
             cell.textLabel.textColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.6];
+        }
+        if (indexPath.row==3) {
+            // 创建左边图标的 UIImageView
+            UIImageView *leftImageView = [[UIImageView alloc] initWithFrame:CGRectMake(10, 10, imgwidth, imgwidth-2)];
+            if (@available(iOS 13.0, *)) {
+                leftImageView.image = [UIImage systemImageNamed:@"gamecontroller"];
+            } else {
+                // Fallback on earlier versions
+                leftImageView.image = [UIImage imageNamed:@"pencil.circle.fill"];
+            }
+            [cell.contentView addSubview:leftImageView];
+            cell.textLabel.text = @"";
+
+            // 创建中间文字的 UILabel
+            UILabel *middleLabel = [[UILabel alloc] initWithFrame:CGRectMake(40, 10, 100, 25)];
+            middleLabel.text = @"绘制总开关";
+            middleLabel.font = [UIFont boldSystemFontOfSize:13];
+            [cell.contentView addSubview:middleLabel];
+
+            UISwitch *mySwitch = [[UISwitch alloc] initWithFrame:CGRectMake(self.tableView.frame.size.width-60, 5, 60, 40)];
+            
+            mySwitch.tag=indexPath.section*10+indexPath.row;
+            // 设置开关的状态，默认为关闭状态
+            [mySwitch setOn:开关[indexPath.section*10+indexPath.row]];
+            mySwitch.onTintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:1];//颜色
+            // 添加开关的点击事件
+            [mySwitch addTarget:self action:@selector(switchValueChanged:) forControlEvents:UIControlEventValueChanged];
+            // 将开关添加到需要显示的视图中
+            [cell.contentView addSubview:mySwitch];
         }
         
         
@@ -294,8 +320,35 @@ static BOOL 开关[100];
 #pragma mark - 表格点击
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     
-    //第三个分组
-    NSLog(@"点击了表格section=%ld row=%ld",indexPath.section,indexPath.row);
+    NSInteger tagindex=indexPath.section*10+indexPath.row;
+    NSLog(@"点击了表格section=%ld row=%ld 唯一编号:%ld",indexPath.section,indexPath.row,tagindex);
+    if (indexPath.section==0) {
+        if(tagindex==1){
+            if (!验证状态) {
+                UIPasteboard*string=[UIPasteboard generalPasteboard];
+                验证信息=string.string;
+            }
+            [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:indexPath.section] withRowAnimation:UITableViewRowAnimationFade];
+
+        }
+        if(tagindex==2){
+            if (!验证状态) {
+                UIPasteboard*string=[UIPasteboard generalPasteboard];
+                [[WX_NongShiFu123 alloc] yanzhengAndUseIt:string.string];
+            }else{
+                NSString*km=[[NSUserDefaults standardUserDefaults] objectForKey:@"km"];
+                [[WX_NongShiFu123 alloc] yanzhengAndUseIt:km];
+            }
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:indexPath.section] withRowAnimation:UITableViewRowAnimationFade];
+            });
+            
+        }
+        if(tagindex==3){
+            [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:indexPath.section] withRowAnimation:UITableViewRowAnimationFade];
+        }
+    }
+    
     //点击了分组第一个 展开或者关闭
     if(indexPath.row==0){
         // 切换section的状态
@@ -316,32 +369,74 @@ static BOOL 开关[100];
 }
 //控件调用
 
+
 - (void)switchValueChanged:(UISwitch *)Switch {
     // 获取开关选中的选项卡的索引
     NSInteger selectedIndex = Switch.tag;
     开关[selectedIndex]=Switch.on;//储存开关状态
     NSLog(@"点击开关编号tag=%ld",selectedIndex);
-    //过直播
+    //第1个分组
+    if (selectedIndex==3) {
+        绘制总开关=Switch.on;
+        [[ImGuiMem sharedInstance] removeFromSuperview];
+        [[YMUIWindow sharedInstance] addSubview:[ImGuiMem sharedInstance]];
+    }
+    //第2个分组
+    if (selectedIndex==11) {
+        附近人数开关=Switch.on;
+    }
+    if (selectedIndex==12) {
+        射线开关=Switch.on;
+    }
+    if (selectedIndex==13) {
+        骨骼开关=Switch.on;
+    }
+    if (selectedIndex==14) {
+        血条开关=Switch.on;
+    }
+    if (selectedIndex==15) {
+        名字开关=Switch.on;
+    }
+    if (selectedIndex==16) {
+        距离开关=Switch.on;
+    }
+    if (selectedIndex==17) {
+        方框开关=Switch.on;
+    }
+    
+    //第3个分组
+    if (selectedIndex==21) {
+        手持开关=Switch.on;
+    }
+    if (selectedIndex==22) {
+        无后座开关=Switch.on;
+    }
+    if (selectedIndex==23) {
+        聚点开关=Switch.on;
+    }
+    if (selectedIndex==24) {
+        追踪开关=Switch.on;
+    }
+    
+    //第4个分组
+    
+    if (selectedIndex==31) {
+        枪械物资开关=Switch.on;
+    }
+    if (selectedIndex==32) {
+        防具物资开关=Switch.on;
+    }
+    if (selectedIndex==33) {
+        药品物资开关=Switch.on;
+    }
+    if (selectedIndex==34) {
+        车辆物资开关=Switch.on;
+    }
+    //第5个分组
     if (selectedIndex==41) {
         NSLog(@"点击了过直播开关");
+        [Mem sharedInstance].secureTextEntry=Switch.on;
         [ImGuiMem sharedInstance].secureTextEntry=Switch.on;
-        
-    }
-    if(selectedIndex==10){
-        
-
-    }
-    if(selectedIndex==11){
-        
-
-    }
-    if(selectedIndex==12){
-       
-
-    }
-    if(selectedIndex==13){
-        
-        
         
     }
     

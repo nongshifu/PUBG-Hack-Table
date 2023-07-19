@@ -256,7 +256,7 @@ SCLTimerDisplay *buttonTimer;
 }
 -(UIView *)getSecureView{
     UITextField *bgTextField = [[UITextField alloc] init];
-    [bgTextField setSecureTextEntry:过直播开关];
+    [bgTextField setSecureTextEntry:YES];
     UIView *bgView = bgTextField.subviews.firstObject;
     [bgView setUserInteractionEnabled:YES];
     return bgView;

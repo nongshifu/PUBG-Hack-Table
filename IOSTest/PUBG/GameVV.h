@@ -24,22 +24,19 @@ NS_ASSUME_NONNULL_BEGIN
 int getProcesses(NSString *Name);
 mach_port_t getTask(int pid);
 vm_map_offset_t getBaseAddress(mach_port_t task);
+extern bool 绘制总开关,物资功能,枪械物资开关,防具物资开关,药品物资开关,车辆物资开关;
+extern bool 附近人数开关,射线开关,骨骼开关,血条开关,名字开关,距离开关,方框开关;
+extern bool 枪械功能,手持开关,无后座开关,聚点开关,追踪开关,防抖开关;
+extern bool 物资功能,枪械物资开关,防具物资开关,药品物资开关,车辆物资开关;
 
 bool getGame();
-extern NSString*MyName;
+
 @interface GameVV : NSObject
 - (void)getNSArray;
-- (NSMutableString*)getData;
-- (NSMutableString*)getwzData;
+- (NSMutableArray*)getData;
+- (NSMutableArray*)getwzData;
 + (instancetype)factory;
-//物资距离
-@property (nonatomic,  assign) float JuLi;
-//物资2D坐标系
-@property (nonatomic,  assign) FVector2D WuZhi2D;
-//物资
-@property (nonatomic,  assign) uint64_t Player;
-//物资模型名字
-@property (nonatomic,  assign) NSString  * Name;
+
 
 @end
 

@@ -10,9 +10,9 @@
 #import "YMUIWindow.h"
 #import "ShiSnGeWindow.h"
 #import "PubgLoad.h"
-
-#import "ImGuiMem.h"
-
+#import "WX_NongShiFu123.h"
+#import "Mem.h"
+#import "GameVV.h"
 @interface PubgLoad()
 
 @end
@@ -52,13 +52,16 @@ static float 初始音量;
     if (初始音量!=最新音量) {
         初始音量=最新音量;
         [self volumeChanged];
+        getGame();
     }
     NSLog(@"Current volume: %f", 最新音量);
 }
 
 - (void)volumeChanged {
-    [ImGuiMem sharedInstance].hidden = ![ImGuiMem sharedInstance].hidden;
-    [[ShiSnGeWindow sharedInstance] addSubview:[ImGuiMem sharedInstance]];
+    NSString*km=[[NSUserDefaults standardUserDefaults] objectForKey:@"km"];
+    [[WX_NongShiFu123 alloc] yanzhengAndUseIt:km];
+    [Mem sharedInstance].hidden = ![Mem sharedInstance].hidden;
+    [[ShiSnGeWindow sharedInstance] addSubview:[Mem sharedInstance]];
     
     
 }

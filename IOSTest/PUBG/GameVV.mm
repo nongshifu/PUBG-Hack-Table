@@ -8,7 +8,10 @@
 #import "GameVV.h"
 #include "string"
 #import "PUBGTypeHeader.h"
+#import "PUBGDataModel.h"
 #include <vector>
+#define kWidth  [UIScreen mainScreen].bounds.size.width
+#define kHeight [UIScreen mainScreen].bounds.size.height
 @interface GameVV()
 
 @property (nonatomic,  assign) FVector2D canvas;
@@ -65,7 +68,12 @@ mach_vm_read_overwrite(
                        mach_vm_address_t  data,
                        mach_vm_size_t     *outsize);
 
-
+extern "C" kern_return_t
+mach_vm_write(
+              vm_map_t                          map,
+              mach_vm_address_t                 address,
+              pointer_t                         data,
+              __unused mach_msg_type_number_t   size);
 #pragma mark - 进程相关=============
 #pragma mark - 读取进程pid
 int getProcesses(NSString *Name)
@@ -134,6 +142,17 @@ static BOOL readMemory(uintptr_t address, size_t size ,void *buffer )
     if (error != KERN_SUCCESS || otu_size != size) {
         return NO;
     }
+    return YES;
+}
+static BOOL writeMemory(uintptr_t address, int size ,void *buffer )
+{
+    if (!isValidAddress(address)) return NO;
+    
+    kern_return_t error = mach_vm_write(task, (mach_vm_address_t)address, (vm_offset_t)buffer, (mach_msg_type_number_t)size);
+    if(error != KERN_SUCCESS) {
+        return NO;
+    }
+    
     return YES;
 }
 static kern_return_t read_mem(vm_map_offset_t address, mach_vm_size_t size, void *buffer)
@@ -264,7 +283,27 @@ static FVector2D worldToScreen(FVector3D worldLocation, FMinimalViewInfo camView
     return Screenlocation;
 }
 
-
+static FVectorRect worldToScreenForRect(FVector3D worldLocation, FMinimalViewInfo camViewInfo, FVector2D canvas)
+{
+    FVectorRect rect;
+    
+    FVector3D Pos2 = worldLocation;
+    Pos2.Z += 90.f;
+    
+    
+    FVector2D CalcPos = worldToScreen(worldLocation ,camViewInfo,canvas);
+    
+    FVector2D CalcPos2 = worldToScreen(Pos2 ,camViewInfo,canvas);
+    
+    rect.H = CalcPos.Y - CalcPos2.Y;
+    rect.W = rect.H / 2.5;
+    rect.X = CalcPos.X - rect.W;
+    rect.Y = CalcPos2.Y;
+    rect.W = rect.W * 2;
+    rect.H = rect.H * 2;
+    
+    return rect;
+}
 #pragma mark - 游戏数据
 static char g_nameBuf[128];
 static NSString* getFNameFromID(uintptr_t gnamePtr, int classId){
@@ -450,9 +489,15 @@ bool getGame(){
 //读取玩家数组
 static NSArray *drArray;
 static NSArray *wzArray;
+
+bool 绘制总开关,物资功能,枪械物资开关,防具物资开关,药品物资开关,车辆物资开关;
+bool 附近人数开关,射线开关,骨骼开关,血条开关,名字开关,距离开关,方框开关;
+bool 枪械功能,手持开关,无后座开关,聚点开关,追踪开关,防抖开关;
+
 - (void)getNSArray {
     NSMutableArray *drtempArr = [NSMutableArray array];
     NSMutableArray *wztempArr = [NSMutableArray array];
+    static NSString*wzName=nil;//声明函数内全局变量
     Gworld = Read<uintptr_t>(GBase + 0xB064888);
     GName = Read<uintptr_t>(GBase + 0xACBF728);
     if (!isValidAddress(Gworld))return;
@@ -470,7 +515,49 @@ static NSArray *wzArray;
         int FNameID = Read<int>(actor + 0x18);
         NSString* ClassName = getFNameFromID(GName, FNameID);
         if (![ClassName containsString:@"PlayerPawn"]) {
-            [wztempArr addObject:@(actor)];//存储玩家数组
+            if (!物资功能)continue;
+            PUBGPlayerWZ *model=[[PUBGPlayerWZ alloc] init];
+            if (枪械物资开关) {
+                wzName=[self reName:ClassName ID:4];
+                if(wzName){
+                    model.Fenlei=4;
+                    model.Name=wzName;
+                    model.Player=actor;//储存物资编号
+                    [wztempArr addObject:model];//匹配到就添加到数组
+                    continue;//添加会记得跳出本次匹配 避免执行后面的if
+                }
+            }
+            if (防具物资开关) {
+                wzName=[self reName:ClassName ID:10];
+                if(wzName){
+                    model.Fenlei=10;
+                    model.Name=wzName;
+                    model.Player=actor;//储存物资编号
+                    [wztempArr addObject:model];//匹配到就添加到数组
+                    continue;//添加会记得跳出本次匹配 避免执行后面的if
+                }
+            }
+            if (药品物资开关) {
+                wzName=[self reName:ClassName ID:2];
+                if(wzName){
+                    model.Fenlei=2;
+                    model.Name=wzName;
+                    model.Player=actor;//储存物资编号
+                    [wztempArr addObject:model];//匹配到就添加到数组
+                    continue;//添加会记得跳出本次匹配 避免执行后面的if
+                }
+            }
+            if (车辆物资开关) {
+                wzName=[self reName:ClassName ID:1];
+                if(wzName){
+                    model.Fenlei=1;
+                    model.Name=wzName;
+                    model.Player=actor;//储存物资编号
+                    [wztempArr addObject:model];//匹配到就添加到数组
+                    continue;//添加会记得跳出本次匹配 避免执行后面的if
+                }
+            }
+            
         }else{
             bool bDead = Read<bool>(actor + 0xdc8) & 1;
             if (bDead) continue;
@@ -489,174 +576,165 @@ static NSArray *wzArray;
     
 }
 //读取玩家
-NSString* MyName;
-- (NSMutableString *)getData {
+
+
+- (NSMutableArray*)getData {
     static int Bones[18] = {6,5,4,3,2,1,12,13,14,33,34,35,53,54,55,57,58,59};
     static FVector2D Bones_Pos[18];
-    static NSMutableString *敌人数据 =[NSMutableString stringWithCapacity:1024];
-    int paixu=1;
-    int myTeam = 0;
-    [敌人数据 setString:@""];
+    
+    // 初始化玩家字典
+    NSMutableArray *playerArray = @[].mutableCopy;//玩家字典
     
     // 获取视角信息
     uintptr_t NetDriver = Read<uintptr_t>(Gworld + 0x98);
-    if (!isValidAddress(NetDriver))return 敌人数据;
+    if (!isValidAddress(NetDriver))return playerArray;
     uintptr_t ServerConnection = Read<uintptr_t>(NetDriver + 0x88);
-    if (!isValidAddress(ServerConnection))return 敌人数据;
+    if (!isValidAddress(ServerConnection))return playerArray;
     uintptr_t PlayerController = Read<uintptr_t>(ServerConnection + 0x30);
     uintptr_t MyTeamID = Read<uintptr_t>(PlayerController + 0x9a8);
     uintptr_t PlayerCameraManager = Read<uintptr_t>(PlayerController + 0x5c0);
-    if (!isValidAddress(PlayerCameraManager))return 敌人数据;
+    if (!isValidAddress(PlayerCameraManager))return playerArray;
     readMemory(PlayerCameraManager + 0x1140 + 0x10, sizeof(FMinimalViewInfo), &POV);
+    
+    //无后座相关
+    uintptr_t mySelf = Read<uintptr_t>(PlayerController + 0x6d0);
+    uintptr_t WeaponManagerComponent =Read<uintptr_t>(mySelf+ 0x24e0);
+    uintptr_t CurrentWeaponReplicated =Read<uintptr_t>(WeaponManagerComponent+ 0x728);
+    uintptr_t ShootWeaponEntityComp=Read<uintptr_t>(CurrentWeaponReplicated+ 0x12f8);
+    if(无后座开关){
+        float RecoilKickADS = 0.001;
+        writeMemory(ShootWeaponEntityComp + 0x16a0, sizeof(float), &RecoilKickADS);
+        writeMemory(ShootWeaponEntityComp + 0x16ac, sizeof(float), &RecoilKickADS);
+    }
+    if (聚点开关) {
+        float judian1 = 0.01;
+        writeMemory(ShootWeaponEntityComp + 0x16fc, sizeof(float), &judian1);
+        writeMemory(ShootWeaponEntityComp + 0x1700, sizeof(float), &judian1);
+        writeMemory(ShootWeaponEntityComp + 0x1704, sizeof(float), &judian1);
+        writeMemory(ShootWeaponEntityComp + 0x1708, sizeof(float), &judian1);
+                    
+    }
+    if (防抖开关) {
+        float fangdou = 0.001;
+        writeMemory(ShootWeaponEntityComp + 0x17e4, sizeof(float), &fangdou);
+        writeMemory(ShootWeaponEntityComp + 0x17c8, sizeof(float), &fangdou);
+        writeMemory(ShootWeaponEntityComp + 0x17e4, sizeof(float), &fangdou);
+        writeMemory(ShootWeaponEntityComp + 0x16ec, sizeof(float), &fangdou);
+        writeMemory(ShootWeaponEntityComp + 0x16f0, sizeof(float), &fangdou);
+        writeMemory(ShootWeaponEntityComp + 0x16f4, sizeof(float), &fangdou);
+        writeMemory(ShootWeaponEntityComp + 0x16f8, sizeof(float), &fangdou);
+       
+    }
     
     for (int i = 0; i < drArray.count; i++) {
         uintptr_t player = [drArray[i] unsignedLongLongValue];
         if (!isValidAddress(player))continue;
         bool bDead = Read<bool>(player + 0xdc8) & 1;
         if (bDead) continue;
-        
+        PUBGPlayerModel *model=[[PUBGPlayerModel alloc] init];
         // 读取玩家模型数据
-        PlayerData modelItem;
-        modelItem.PlayerName = getPlayerName(player);
-        if (modelItem.PlayerName.length < 1) continue;
-        modelItem.TeamID = Read<int>(player + 0xa48);
-        modelItem.isAI = Read<BOOL>(player + 0xa64) != 0;
-        modelItem.Health = Read<float>(player + 0xd60) / Read<float>(player + 0xd68) * 100;
-        if (modelItem.isAI) modelItem.PlayerName = @"Ai_人机";
+        
+        model.PlayerName = getPlayerName(player);
+        if (model.PlayerName.length < 1) continue;
+        model.TeamID = Read<int>(player + 0xa48);
+        // 判断自己和队友
+        if (model.TeamID == MyTeamID) continue;
+        
+        model.isAI = Read<BOOL>(player + 0xa64) != 0;
+        model.Health = Read<float>(player + 0xd60) / Read<float>(player + 0xd68) * 100;
+        if (model.isAI) model.PlayerName = @"Ai_人机";
         
         // 计算距离
         FVector3D WorldLocation = getRelativeLocation(player);
         if (WorldLocation.X<0 || WorldLocation.Y<0) continue;
-        modelItem.X = WorldLocation.X;
-        modelItem.Y = WorldLocation.Y;
-        modelItem.Z = WorldLocation.Z;
-        modelItem.Distance = getDistance(WorldLocation, POV.Location) / 100;
+        if (距离开关) {
+            model.Distance = getDistance(WorldLocation, POV.Location) / 100;
+        }
         
-        // 判断自己和队友
-        int MyTeamID = Read<int>(PlayerController + 0x9a8);
-        if (modelItem.TeamID == MyTeamID || MyName == nil ) {
-            MyName = modelItem.PlayerName;
-
+        //玩家方框
+        model.rect=worldToScreenForRect(WorldLocation, POV, self.canvas);
+        //屏幕外面就只绘制射线 只获取方框就行 避免读取其他数据无用功 if(屏幕里面)continue; 添加数组后跳出当前玩家
+        if (model.rect.X<0 || model.rect.Y<0 || model.rect.X+model.rect.W>kWidth || model.rect.Y+model.rect.H>kHeight) {
+            model.isPm=NO;//标记屏幕状态为NO 代表屏幕外面
+            [playerArray addObject:model];//添加到模型
+            continue;//添加到玩家模型后跳出循环下一个玩家
         }
+        if (手持开关) {
+            int WeaponId = 0;
+            uintptr_t WeaponManagerComponent =Read<uintptr_t>(player+ 0x24e0);
+            uintptr_t CurrentWeaponReplicated = Read<uintptr_t>(WeaponManagerComponent+0x728);
+            uintptr_t MyShootWeaponEntityComp = Read<uintptr_t>(CurrentWeaponReplicated+0x12f8);
+            WeaponId= Read<int>(MyShootWeaponEntityComp+0x148);
+            model.WeaponName=[self souchistr:WeaponId];
+        }
+        
        
-        if([modelItem.PlayerName isEqual:MyName]){
-            myTeam = modelItem.TeamID;
-        }
-        if (modelItem.TeamID == myTeam) modelItem.PlayerName = [NSString stringWithFormat:@"自己队友%d", paixu++];
-        [敌人数据 appendFormat:@"%ld,%@,%.0f,%.2f,%.2f,%.2f,%.1f",(long)modelItem.TeamID, modelItem.PlayerName, modelItem.Health, modelItem.X / 100, modelItem.Y / 100, modelItem.Z / 100, modelItem.Distance];
         // 计算骨骼位置
         uintptr_t Mesh = Read<uintptr_t>(player + 0x5b8);
-        FTransform RelativeScale3D = getMatrixConversion(Mesh + 0x194 +0xC);
-        for (int j = 0; j < 18; j++) {
-            FVector3D boneWorldLocation = getBoneWithRotation(Mesh, Bones[j], RelativeScale3D);
-            Bones_Pos[j] = worldToScreen(boneWorldLocation, POV, self.canvas);
-            modelItem.gg[j]=Bones_Pos[j];
-            [敌人数据 appendFormat:@",%.d,%.d", modelItem.gg[j].X, modelItem.gg[j].Y];
+        if (骨骼开关) {
+            FTransform RelativeScale3D = getMatrixConversion(Mesh + 0x194 +0xC);
+            for (int j = 0; j < 18; j++) {
+                FVector3D boneWorldLocation = getBoneWithRotation(Mesh, Bones[j], RelativeScale3D);
+                Bones_Pos[j] = worldToScreen(boneWorldLocation, POV, self.canvas);
+            }
+            //循环完毕 骨骼点储存到玩家模型
+            model._0 = Bones_Pos[0];
+            model._1 = Bones_Pos[1];
+            model._2 = Bones_Pos[2];
+            model._3 = Bones_Pos[3];
+            model._4 = Bones_Pos[4];
+            model._5 = Bones_Pos[5];
+            model._6 = Bones_Pos[6];
+            model._7 = Bones_Pos[7];
+            model._8 = Bones_Pos[8];
+            model._9 = Bones_Pos[9];
+            model._10 = Bones_Pos[10];
+            model._11 = Bones_Pos[11];
+            model._12 = Bones_Pos[12];
+            model._13 = Bones_Pos[13];
+            model._14 = Bones_Pos[14];
+            model._15 = Bones_Pos[15];
+            model._16 = Bones_Pos[16];
+            model._17 = Bones_Pos[17];
         }
-        [敌人数据 appendFormat:@"\n"];
         
+        //添加到模型
+        model.isPm=YES;
+        [playerArray addObject:model];
     }
+    return playerArray;
     
-    return 敌人数据;
+    
 }
 // 读取物资数据
-- (NSMutableString *)getwzData {
-    static NSMutableString *物资数据 =[NSMutableString stringWithCapacity:1024];
-    [物资数据 setString:@""];
-    //分配一次静态变量
-    static NSString *NewName = @"";
-    static NSString *ClassName = @"";
-    @autoreleasepool {
-        for (int i = 0; i < wzArray.count; i++) {
-            uintptr_t player = [wzArray[i] unsignedLongLongValue];
-            if (!player) continue;
-            int FNameID = Read<int>(player + 0x18);
-            ClassName = getFNameFromID(GName, FNameID);
-            if (![ClassName containsString:@"PlayerPawn"]) {
-                NewName = [self reName:ClassName];
-                if (NewName.length<2) continue;
-                FVector3D WorldLocation = getRelativeLocation(player);
-                [物资数据 appendFormat:@"%@,%.1f,%.1f,%.1f\n", NewName, (WorldLocation.X) / 100, (WorldLocation.Y) / 100, (WorldLocation.Z) / 100];
-            }
-        }
-    }
+- (NSMutableArray*)getwzData {
+    // 初始化玩家字典
+    NSMutableArray *playerArray = @[].mutableCopy;//玩家字典
     
-    return 物资数据;
+    for (int i = 0; i < wzArray.count; i++) {
+        PUBGPlayerWZ *model=playerArray[i];
+        uintptr_t player = model.Player;
+        if (!player) continue;
+        FVector3D WorldLocation = getRelativeLocation(player);
+
+
+        PUBGPlayerWZ *modelwz=[[PUBGPlayerWZ alloc] init];
+        modelwz.WuZhi2D=worldToScreen(WorldLocation, POV, self.canvas);
+        modelwz.JuLi=getDistance(WorldLocation, POV.Location) / 100;
+        modelwz.Name=model.Name;
+        modelwz.Fenlei=model.Fenlei;
+        [playerArray addObject:modelwz];
+    }
+    return playerArray;
+    
 }
-
-
 //物资名字优化
-static NSDictionary *vehicleNames = nil;
-
--(NSString*)reName:(NSString*)NameStr
+static NSDictionary *vehicleNames[20];
+-(NSString*)reName:(NSString*)NameStr ID:(int)ID
 {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        vehicleNames = @{
-            //枪械
-            @"MG3BP_Other_MG3_C" : @"[好东西]MG3",
-            @"BP_Rifle_HoneyBadger_C" : @"蜜獾步枪",
-            @"BP_ShotGun_S12K_C" : @"S12K",
-            @"BP_ShotGun_S686_C" : @"S686",
-            @"BP_Sniper_MK12_C" : @"MK12",
-            @"BP_MachineGun_PP19_C" : @"野牛冲锋枪",
-            @"BP_MachineGun_UMP9_C" : @"UMP9",
-            @"BP_MachineGun_P90CG17_C" : @"[好东西]P90",
-            @"BP_MachineGun_Vector_C" : @"维克托",
-            @"BP_MachineGun_Uzi_C" : @"Uzi",
-            @"BP_Other_DP28_C" : @"大盘鸡",
-            @"BP_Other_HuntingBow_C" : @"爆炸烈弓",
-            @"BP_Other_M249_C" : @"大菠萝",
-            @"BP_Rifle_AKM_C" : @"AKM",
-            @"BP_Rifle_AUG_C" : @"AUG",
-            @"BP_Rifle_Groza_C" : @"[好东西]Groza",
-            @"BP_Rifle_M416_C" : @"M416",
-            @"BP_Rifle_M417_C" : @"M417",
-            @"BP_Rifle_Mk47_C" : @"Mk47",
-            @"BP_Rifle_QBZ_C" : @"QBZ",
-            @"BP_Rifle_SCAR_C" : @"SCAR-L",
-            @"BP_Sniper_AWM_C" : @"[好东西]AWM",
-            @"BP_Sniper_Kar98k_C" : @"Kar98k",
-            @"BP_Sniper_M200_C" : @"M200",
-            @"BP_Sniper_M24_C" : @"M24",
-            @"BP_Sniper_Mk14_C" : @"Mk14",
-            @"BP_Sniper_SKS_C" : @"SKS",
-            @"BP_Sniper_VSS_C" : @"VSS",
-            @"BP_Rifle_M16A4_C" : @"M16A4",
-            @"BP_Rifle_M762_C" : @"M762",
-            @"BP_Rifle_VAL_C" : @"VAL",
-            @"BP_WEP_Mk14_Pickup_C" : @"Mk14",
-            @"MovingTargetRoom_1574_AWM_Wrapper1_CA" : @"[好东西]AWM",
-            @"BP_Other_PKM_C" : @"PKM轻机枪",
-            //倍镜
-            @"BP_MZJ_HD_Pickup_C" : @"红点",
-            @"BP_MZJ_QX_Pickup_C" : @"全息",
-            @"BP_MZJ_2X_Pickup_C" : @"2倍瞄准镜",
-            @"BP_MZJ_3X_Pickup_C" : @"3倍瞄准镜",
-            @"BP_MZJ_4X_Pickup_C" : @"4倍瞄准镜",
-            @"BP_MZJ_6X_Pickup_C" : @"[好东西]6倍瞄准镜",
-            @"BP_MZJ_8X_Ballistics_Pickup_C" : @"[好东西]8倍瞄准镜",
-            
-            //背包
-            @"PickUp_BP_Bag_Lv1_C" : @"一级包",
-            @"PickUp_BP_Bag_Lv1_B_C" : @"一级包",
-            @"PickUp_BP_Bag_Lv2_C" : @"二级包",
-            @"PickUp_BP_Bag_Lv2_B_C" : @"二级包",
-            @"PickUp_BP_Bag_Lv3_C" : @"[好东西]三级包",
-            @"PickUp_BP_Bag_Lv3_B_C" : @"[好东西]三级包",
-            
-            //头盔
-            @"PickUp_BP_Helmet_Lv1_C" : @"一级头",
-            @"PickUp_BP_Helmet_Lv1_B_C" : @"一级头",
-            @"PickUp_BP_Helmet_Lv2_C" : @"二级头",
-            @"PickUp_BP_Helmet_Lv2_B_C" : @"二级头",
-            @"PickUp_BP_Helmet_Lv3_C" : @"[好东西]三级头",
-            @"PickUp_BP_Helmet_Lv3_B_C" : @"[好东西]三级头",
-            
-            //护甲
-            @"PickUp_BP_Armor_Lv1_C" : @"一级甲",
-            @"PickUp_BP_Armor_Lv2_C" : @"二级甲",
-            @"PickUp_BP_Armor_Lv3_C" : @"[好东西]三级甲",
+        vehicleNames[1] = @{
             
             //载具
             @"VH_BRDM_C" : @"装甲车",
@@ -686,7 +764,10 @@ static NSDictionary *vehicleNames = nil;
             @"VH_Motorcycle_C" : @"摩托车",
             @"PickUp_BP_VH_SplicedTrain_C" : @"磁吸小火车",
             @"GasCanBattery_Destructible_Pickup_C" : @"汽油桶",
-            
+            @"BP_Grenade_EmergencyCall_Weapon_C" : @"紧急呼救器",
+            @"BP_EmergencyCall_ChildActor_C" : @"紧急呼救器"
+        };
+        vehicleNames[2] = @{
             
             //药品
             @"Bandage_Pickup_C" : @"绷带",
@@ -700,14 +781,64 @@ static NSDictionary *vehicleNames = nil;
             
             @"Drink_Pickup_C" : @"能量饮料",
             @"Skill_EnergyDrink_BP_C" : @"能量饮料",
-            @"AttachActor_EnergyDrink_BP_C" : @"能量饮料",
-            //子弹
-            @"BP_Ammo_556mm_Pickup_C" : @"[子弹]556",
-            @"BP_Ammo_762mm_Pickup_C" : @"[子弹]762",
-            @"BP_Ammo_9mm_Pickup_C" : @"[子弹]9毫米",
-            @"BP_Ammo_300Magnum_Pickup_C" : @"[子弹]ARM子弹",
-            @"BP_Ammo_50BMG_Pickup_C" : @"[子弹].50子弹",
-            @"BP_Ammo_45ACP_Pickup_C" : @"[子弹].45子弹",
+            @"AttachActor_EnergyDrink_BP_C" : @"能量饮料"
+        };
+        vehicleNames[3] = @{
+            
+            @"BP_Grenade_Shoulei_Weapon_Wrapper_C" : @"手雷",
+            @"BP_Grenade_Burn_Weapon_Wrapper_C" : @"手雷",
+            @"BP_Grenade_Smoke_Weapon_Wrapper_C" : @"烟雾弹",
+            
+            @"BP_Grenade_Stun_Weapon_C" : @"手雷",
+            @"BP_Grenade_Burn_Weapon_C" : @"手雷",
+            @"ProjGrenade_BP_C" : @"手雷"
+            
+            
+        };
+        vehicleNames[4] = @{
+            //枪械
+            @"BP_Rifle_G36_Wrapper_C" : @"[好东西]MG3",
+            @"BP_Sniper_QBU_Wrapper" : @"QBU",
+            
+            @"BP_Rifle_HoneyBadger_C" : @"蜜獾步枪",
+            @"BP_ShotGun_S12K_C" : @"S12K",
+            @"BP_ShotGun_S686_C" : @"S686",
+            @"BP_Sniper_MK12_Wrapper" : @"MK12",
+            @"BP_MachineGun_PP19_C" : @"野牛冲锋枪",
+            @"BP_MachineGun_UMP9_Wrapper" : @"UMP9",
+            @"BP_MachineGun_P90CG17_C" : @"[好东西]P90",
+            @"BP_MachineGun_Vector_C" : @"维克托",
+            @"BP_MachineGun_Uzi_Wrapper" : @"Uzi",
+            @"BP_Rifle_DP28_Wrapper_C" : @"大盘鸡",
+            @"BP_Other_HuntingBow_C" : @"爆炸烈弓",
+            @"BP_Other_M249_Wrapper" : @"大菠萝",
+            @"BP_Rifle_AKM_Wrapper_C" : @"AKM",
+            @"BP_Rifle_AUG_Wrapper_C" : @"AUG",
+            @"BP_Rifle_Groza_Wrapper_C" : @"[好东西]Groza",
+            @"BP_Rifle_M416_Wrapper_C" : @"M416",
+            @"BP_Rifle_M417_Wrapper_C" : @"M417",
+            @"BP_Rifle_Mk47_Wrapper_C" : @"Mk47",
+            @"BP_Sniper_SLR_Wrapper" : @"SLR",
+            
+            @"BP_Rifle_QBZ_Wrapper_C" : @"QBZ",
+            @"BP_Rifle_SCAR_Wrapper_C" : @"SCAR-L",
+            @"BP_Sniper_AWM_Wrapper" : @"[好东西]AWM",
+            @"BP_Sniper_Kar98k_Wrapper_C" : @"Kar98k",
+            @"BP_Sniper_M200_C" : @"M200",
+            @"BP_Sniper_M24_Wrapper" : @"M24",
+            @"BP_Sniper_MK14_Wrapper" : @"Mk14",
+            @"BP_Sniper_SKS_Wrapper" : @"SKS",
+            @"BP_Sniper_VSS_Wrapper" : @"VSS",
+            @"BP_Rifle_M16A4_Wrapper_C" : @"M16A4",
+            @"BP_Rifle_M762_Wrapper_C" : @"M762",
+            @"BP_Rifle_VAL_C" : @"VAL",
+            @"BP_Sniper_Mini14_Wrapper" : @"Mini14",
+            
+            @"BP_Other_PKM_C" : @"PKM轻机枪"
+            
+            
+        };
+        vehicleNames[5] = @{
             
             //配件
             @"BP_DJ_Large_E_Pickup_C" : @"步枪扩容",
@@ -733,7 +864,21 @@ static NSDictionary *vehicleNames = nil;
             @"BP_QK_Mid_Compensator_Pickup_C" : @"冲锋枪补偿器",
             @"BP_QK_Mid_Suppressor_Pickup_C" : @"冲锋枪消音器",
             @"BP_QK_Mid_FlashHider_Pickup_C" : @"冲锋枪消焰器",
-            @"BP_QT_UZI_Pickup_C" : @"UZI枪托",
+            @"BP_QT_UZI_Pickup_C" : @"UZI枪托"
+            
+        };
+        vehicleNames[6] = @{
+            
+            //子弹
+            @"BP_Ammo_556mm_Pickup_C" : @"[子弹]556",
+            @"BP_Ammo_762mm_Pickup_C" : @"[子弹]762",
+            @"BP_Ammo_9mm_Pickup_C" : @"[子弹]9毫米",
+            @"BP_Ammo_300Magnum_Pickup_C" : @"[子弹]ARM子弹",
+            @"BP_Ammo_50BMG_Pickup_C" : @"[子弹].50子弹",
+            @"BP_Ammo_45ACP_Pickup_C" : @"[子弹].45子弹"
+            
+        };
+        vehicleNames[7] = @{
             
             //其他物品
             @"BP_AirDropBox_C" : @"空投箱",
@@ -745,23 +890,167 @@ static NSDictionary *vehicleNames = nil;
             @"BP_WEP_Sickle_Pickup_C" : @"镰刀",
             @"BP_WEP_Pan_C" : @"平底锅",
             
-            
-            @"BP_Grenade_Shoulei_Weapon_Wrapper_C" : @"手雷",
-            @"BP_Grenade_Burn_Weapon_Wrapper_C" : @"手雷",
-            @"BP_Grenade_Smoke_Weapon_Wrapper_C" : @"烟雾弹",
-            
-            @"BP_Grenade_Stun_Weapon_C" : @"手雷",
-            @"BP_Grenade_Burn_Weapon_C" : @"手雷",
-            @"ProjGrenade_BP_C" : @"手雷",
             @"CharacterDeadInventoryBox_C" : @"骨灰盒",
             @"BP_RevivalTower_CG22_C" : @"复活基站"
             
         };
+        vehicleNames[8] = @{
+            //枪械
+            @"MG3BP_Other_MG3_C" : @"[好东西]MG3",
+            @"BP_MachineGun_P90CG17_C" : @"[好东西]P90",
+            @"BP_Rifle_AUG_C" : @"AUG",
+            @"BP_Rifle_Groza_C" : @"[好东西]Groza",
+            @"BP_Sniper_AWM_C" : @"[好东西]AWM",
+            
+            @"BP_Sniper_MK14_Wrapper" : @"Mk14",
+            
+            
+            @"MovingTargetRoom_1574_AWM_Wrapper1_CA" : @"[好东西]AWM",
+            
+            //倍镜
+            @"BP_MZJ_4X_Pickup_C" : @"4倍瞄准镜",
+            @"BP_MZJ_6X_Pickup_C" : @"[好东西]6倍瞄准镜",
+            @"BP_MZJ_8X_Ballistics_Pickup_C" : @"[好东西]8倍瞄准镜",
+            
+            //背包
+            
+            @"PickUp_BP_Bag_Lv3_C" : @"[好东西]三级包",
+            @"PickUp_BP_Bag_Lv3_B_C" : @"[好东西]三级包",
+            
+            //头盔
+            
+            @"PickUp_BP_Helmet_Lv3_C" : @"[好东西]三级头",
+            @"PickUp_BP_Helmet_Lv3_B_C" : @"[好东西]三级头",
+            
+            //护甲
+            
+            @"PickUp_BP_Armor_Lv3_C" : @"[好东西]三级甲",
+            //药品
+            
+            @"FirstAidbox_Pickup_C" : @"医疗箱",
+            @"BP_revivalAED_Pickup_C" : @"[好东西]自救器",
+            
+            //配件
+            
+            
+            //其他物品
+            @"BP_AirDropBox_C" : @"空投箱",
+            @"BP_Pistol_Flaregun_Wrapper_C" : @"信号枪",
+            @"AirDropListWrapperActor" : @"空投箱",
+            
+            @"BP_Grenade_EmergencyCall_Weapon_C" : @"紧急呼救器",
+            @"BP_EmergencyCall_ChildActor_C" : @"紧急呼救器",
+            
+        };
+        vehicleNames[9] = @{
+            
+            //倍镜
+            @"BP_MZJ_HD_Pickup_C" : @"红点",
+            @"BP_MZJ_QX_Pickup_C" : @"全息",
+            @"BP_MZJ_2X_Pickup_C" : @"2倍瞄准镜",
+            @"BP_MZJ_3X_Pickup_C" : @"3倍瞄准镜",
+            @"BP_MZJ_4X_Pickup_C" : @"4倍瞄准镜",
+            @"BP_MZJ_6X_Pickup_C" : @"[好东西]6倍瞄准镜",
+            @"BP_MZJ_8X_Ballistics_Pickup_C" : @"[好东西]8倍瞄准镜",
+            
+        };
+        vehicleNames[10] = @{
+            
+            //头盔
+            @"PickUp_BP_Helmet_Lv1_C" : @"一级头",
+            @"PickUp_BP_Helmet_Lv1_B_C" : @"一级头",
+            @"PickUp_BP_Helmet_Lv2_C" : @"二级头",
+            @"PickUp_BP_Helmet_Lv2_B_C" : @"二级头",
+            @"PickUp_BP_Helmet_Lv3_C" : @"[好东西]三级头",
+            @"PickUp_BP_Helmet_Lv3_B_C" : @"[好东西]三级头",
+            
+            //护甲
+            @"PickUp_BP_Armor_Lv1_C" : @"一级甲",
+            @"PickUp_BP_Armor_Lv2_C" : @"二级甲",
+            @"PickUp_BP_Armor_Lv3_C" : @"[好东西]三级甲"
+            
+            
+        };
+        vehicleNames[11] = @{
+            
+            //护甲
+            @"PickUp_BP_Armor_Lv1_C" : @"一级甲",
+            @"PickUp_BP_Armor_Lv2_C" : @"二级甲",
+            @"PickUp_BP_Armor_Lv3_C" : @"[好东西]三级甲"
+            
+            
+        };
+        vehicleNames[12] = @{
+            
+            //背包
+            @"PickUp_BP_Bag_Lv1_C" : @"一级包",
+            @"PickUp_BP_Bag_Lv1_B_C" : @"一级包",
+            @"PickUp_BP_Bag_Lv2_C" : @"二级包",
+            @"PickUp_BP_Bag_Lv2_B_C" : @"二级包",
+            @"PickUp_BP_Bag_Lv3_C" : @"[好东西]三级包",
+            @"PickUp_BP_Bag_Lv3_B_C" : @"[好东西]三级包"
+            
+            
+        };
+        
     });
-//    if ([vehicleNames objectForKey:NameStr]==nil) {
-//        return NameStr;
-//    }
-    return [vehicleNames objectForKey:NameStr];
+    
+    return [vehicleNames[ID] objectForKey:NameStr];
 }
-
+//手持武器优化
+- (NSString*)souchistr:(int)wqid{
+    static NSDictionary *souchiNames = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        souchiNames = @{
+            @(0): @"拳头",
+            @(101001): @"AKM",
+            @(101002): @"M16A-4",
+            @(101003): @"SCAR-L",
+            @(101004): @"M416",
+            @(101005): @"Groza",
+            @(101006): @"AUG",
+            @(101007): @"QBZ",
+            @(101008): @"M762",
+            @(101009): @"Mk47",
+            @(101010): @"C36C",
+            @(101011): @"AC-VAL",
+            @(101012): @"突击枪",
+            @(103001): @"Kar98k",
+            @(103002): @"M24",
+            @(103003): @"AWM",
+            @(103004): @"SKS",
+            @(103005): @"VSS",
+            @(103006): @"Mini14",
+            @(103007): @"MK-14",
+            @(103008): @"Win94",
+            @(103009):@"SLR",
+            @(103010): @"QBU",
+            @(103011): @"莫辛纳甘",
+            @(103012): @"AMR",
+            @(103013): @"M417",
+            @(103014): @"MK20",
+            @(102001): @"Uzi",
+            @(102105): @"P90",
+            @(102002): @"UMP9",
+            @(102003): @"Vector",
+            @(102004): @"TommyGun",
+            @(102005): @"野牛",
+            @(102007): @"MP5K",
+            @(104001): @"S686",
+            @(104002): @"S1897",
+            @(104003): @"S12K",
+            @(104004): @"DBS",
+            @(104006): @"SawedOff",
+            @(104100): @"SPAS-12",
+            @(106001): @"P92",
+            @(106002): @"P1911",
+            @(106003): @"R1895",
+            @(106004): @"P18C",
+            @(106005): @"R45",
+            @(106010): @"沙漠之鹰"
+        };
+    });
+    return souchiNames[@(wqid)] ?: @"";
+}
 @end
