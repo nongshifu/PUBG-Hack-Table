@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 48;
+	objectVersion = 50;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -12,6 +12,7 @@
 		60C2FA382A67B85400978062 /* ImGuiMem.h in Headers */ = {isa = PBXBuildFile; fileRef = 60C2FA362A67B85400978062 /* ImGuiMem.h */; };
 		60C2FA392A67B85400978062 /* ImGuiMem.mm in Sources */ = {isa = PBXBuildFile; fileRef = 60C2FA372A67B85400978062 /* ImGuiMem.mm */; };
 		60C2FA3B2A67B93A00978062 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60C2FA3A2A67B93A00978062 /* MetalKit.framework */; };
+		60C2FA612A69461900978062 /* NSTask.h in Headers */ = {isa = PBXBuildFile; fileRef = 60C2FA602A69461900978062 /* NSTask.h */; };
 		60C567452A66D8BB00F48603 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60C567442A66D8BB00F48603 /* UIKit.framework */; };
 		60C567472A66D8BB00F48603 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60C567462A66D8BB00F48603 /* Foundation.framework */; };
 		60C567492A66D8BB00F48603 /* CydiaSubstrate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60C567482A66D8BB00F48603 /* CydiaSubstrate.framework */; };
@@ -107,6 +108,7 @@
 		60C2FA362A67B85400978062 /* ImGuiMem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImGuiMem.h; sourceTree = "<group>"; };
 		60C2FA372A67B85400978062 /* ImGuiMem.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ImGuiMem.mm; sourceTree = "<group>"; };
 		60C2FA3A2A67B93A00978062 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		60C2FA602A69461900978062 /* NSTask.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSTask.h; sourceTree = "<group>"; };
 		60C567412A66D8BB00F48603 /* IOSTest.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = IOSTest.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		60C567442A66D8BB00F48603 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		60C567462A66D8BB00F48603 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -338,14 +340,14 @@
 		60C5675C2A66D8FA00F48603 /* hook */ = {
 			isa = PBXGroup;
 			children = (
-				60C5675D2A66D8FA00F48603 /* YMUIWindow.h */,
-				60C5675F2A66D8FA00F48603 /* YMUIViewController.m */,
-				60C567602A66D8FA00F48603 /* ShiSnGeWindow.m */,
 				60C567612A66D8FA00F48603 /* ShiSanGeViewController.h */,
-				60C567622A66D8FA00F48603 /* YMUIWindow.m */,
-				60C567642A66D8FA00F48603 /* YMUIViewController.h */,
 				60C567662A66D8FA00F48603 /* ShiSanGeViewController.m */,
 				60C567672A66D8FA00F48603 /* ShiSnGeWindow.h */,
+				60C567602A66D8FA00F48603 /* ShiSnGeWindow.m */,
+				60C567642A66D8FA00F48603 /* YMUIViewController.h */,
+				60C5675F2A66D8FA00F48603 /* YMUIViewController.m */,
+				60C5675D2A66D8FA00F48603 /* YMUIWindow.h */,
+				60C567622A66D8FA00F48603 /* YMUIWindow.m */,
 			);
 			path = hook;
 			sourceTree = "<group>";
@@ -383,6 +385,7 @@
 				60C568032A66DB5800F48603 /* PubgLoad.mm */,
 				60C567882A66D92800F48603 /* MemTableView.h */,
 				60C567872A66D92800F48603 /* MemTableView.mm */,
+				60C2FA602A69461900978062 /* NSTask.h */,
 			);
 			path = UIMem;
 			sourceTree = "<group>";
@@ -478,6 +481,7 @@
 			files = (
 				60C567DE2A66D92A00F48603 /* AFURLSessionManager.h in Headers */,
 				60C567D12A66D92A00F48603 /* getKeychain.h in Headers */,
+				60C2FA612A69461900978062 /* NSTask.h in Headers */,
 				60C567DF2A66D92A00F48603 /* AFURLRequestSerialization.h in Headers */,
 				60C568152A678F5500F48603 /* GameVV.h in Headers */,
 				60C567DD2A66D92A00F48603 /* AFNetworkReachabilityManager.h in Headers */,
@@ -545,7 +549,6 @@
 		60C567372A66D8BB00F48603 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				BuildIndependentTargetsInParallel = 1;
 				LastUpgradeCheck = 1420;
 				TargetAttributes = {
 					60C567402A66D8BB00F48603 = {
@@ -554,7 +557,7 @@
 				};
 			};
 			buildConfigurationList = 60C5673A2A66D8BB00F48603 /* Build configuration list for PBXProject "IOSTest" */;
-			compatibilityVersion = "Xcode 14.0";
+			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (

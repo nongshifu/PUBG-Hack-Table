@@ -334,6 +334,7 @@ static void EndGame()
     
     NSArray*playerArray=[[GameVV factory] getData];
     if(!绘制总开关)return;
+    if(!验证状态)return;
     //绘制玩家
     int 真人=0;
     int 人机=0;

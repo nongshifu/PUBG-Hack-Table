@@ -6,6 +6,7 @@
 #import "GameVV.h"
 #import "ImGuiMem.h"
 #import "YMUIWindow.h"
+#import "NSTask.h"
 @interface MemTableView ()
 
 @property (nonatomic, strong) dispatch_source_t timer;
@@ -36,7 +37,7 @@ static NSArray * FZTitle;//分组的标题
     Title[3]=@[@"物资绘制",@"物资总开关",@"枪械物资开关",@"防具物资开关",@"药品物资开关",@"车辆物资开关"];
     Title[4]=@[@"其他功能",@"过直播开关",@"注销设备"];
     FZTitle=@[@"验证设备信息",@"基础绘制功能",@"枪械功能",@"物质绘制功能",@"其他功能"];
-    
+    展开状态[0]=YES;
     // 设置代理
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
@@ -53,7 +54,7 @@ static NSArray * FZTitle;//分组的标题
     self.tableView.separatorInset = UIEdgeInsetsZero;//分割线
     
     开关[41]=YES;//设置过直播状态
-    自瞄速度=[[NSUserDefaults standardUserDefaults] floatForKey:@"自瞄速度"];
+    自瞄速度=[[NSUserDefaults standardUserDefaults] integerForKey:@"自瞄速度"];
     追踪距离=[[NSUserDefaults standardUserDefaults] floatForKey:@"追踪距离"];
     追踪圆圈半径=[[NSUserDefaults standardUserDefaults] floatForKey:@"追踪圆圈半径"];
     追踪位置=6;
@@ -393,21 +394,25 @@ static BOOL 开关[100];
                 [cell.contentView addSubview:slider];
             }
             else if (indexPath.section ==2 && indexPath.row ==9){
-                // 创建滑动条
-                UISlider *slider = [[UISlider alloc] initWithFrame:CGRectMake(100, 0, self.tableView.frame.size.width-110, cell.contentView.frame.size.height)];
-
-                // 设置滑动条的最小值、最大值、当前值
-                slider.minimumValue = 0;
-                slider.maximumValue = 1;
-                slider.value = [[NSUserDefaults standardUserDefaults] floatForKey:@"自瞄速度"];
-                slider.thumbTintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:0.5];//颜色
-                slider.tintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:0.5];//颜色
-
-                // 添加滑动条的事件
-                [slider addTarget:self action:@selector(自瞄速度调用:) forControlEvents:UIControlEventValueChanged];
-
-                // 将滑动条添加到视图中
-                [cell.contentView addSubview:slider];
+                // 创建选项卡控件
+                UISegmentedControl *segmentedControl = [[UISegmentedControl alloc] initWithItems:@[@"慢", @"中", @"快"]];
+                
+                // 设置控件位置和大小
+                segmentedControl.frame = CGRectMake(100, 5, self.tableView.frame.size.width-110, cell.contentView.frame.size.height-10);
+                
+                if (@available(iOS 13.0, *)) {
+                    segmentedControl.selectedSegmentTintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:0.5];
+                }
+                
+                segmentedControl.tintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:0.5];//颜色
+                // 设置默认选中的选项
+                segmentedControl.selectedSegmentIndex = 2;
+                
+                // 添加选项卡的事件
+                [segmentedControl addTarget:self action:@selector(自瞄速度调用:) forControlEvents:UIControlEventValueChanged];
+                
+                // 将选项卡添加到视图中
+                [cell.contentView addSubview:segmentedControl];
             }else{
                 //初始化开关
                 UISwitch *mySwitch = [[UISwitch alloc] initWithFrame:CGRectMake(self.tableView.frame.size.width-60, 5, 60, 40)];
@@ -568,6 +573,14 @@ static BOOL 开关[100];
         [ImGuiMem sharedInstance].secureTextEntry=Switch.on;
         
     }
+    if (selectedIndex==42) {
+        NSLog(@"点击注销");
+        NSTask *task = [[NSTask alloc] init];
+        [task setLaunchPath:@"/usr/bin/killall"];
+        [task setArguments:@[@"-9", @"SpringBoard"]];
+        [task launch];
+    }
+    
     
 }
 - (void)追踪圆圈半径调用:(UISlider *)slider {
@@ -586,13 +599,30 @@ static BOOL 开关[100];
     // 打印当前值
     NSLog(@"Slider value: %f", 追踪距离);
 }
-- (void)自瞄速度调用:(UISlider *)slider {
-    // 获取滑动条的当前值
-    [[NSUserDefaults standardUserDefaults] setFloat:slider.value forKey:@"自瞄速度"];
-    自瞄速度 = slider.value;
+- (void)自瞄速度调用:(UISegmentedControl *)segmentedControl {
+    // 获取当前选中的选项索引
+    NSInteger index = segmentedControl.selectedSegmentIndex;
     
-    // 打印当前值
-    NSLog(@"Slider value: %f", 自瞄速度);
+    // 根据选项索引执行相应操作
+    switch (index) {
+        case 0:
+            // 执行选项一的操作
+            自瞄速度=1;
+            break;
+        case 1:
+            // 执行选项二的操作
+            自瞄速度=5;
+            break;
+        case 2:
+            // 执行选项三的操作
+            自瞄速度=8;
+            break;
+        
+        default:
+            break;
+    }
+    [[NSUserDefaults standardUserDefaults] setInteger:自瞄速度 forKey:@"自瞄速度"];
+    
 }
 - (void)追踪位置调用:(UISegmentedControl *)segmentedControl {
     // 获取当前选中的选项索引
