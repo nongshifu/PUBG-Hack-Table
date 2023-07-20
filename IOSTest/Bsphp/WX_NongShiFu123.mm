@@ -97,6 +97,9 @@ NSString*到期时间;
                     NSString*fuwuqijqm=arr[2];
                     if ([fuwuqijqm containsString:[self getUDID]]) {
                         [[NSUserDefaults standardUserDefaults] setObject:km forKey:@"km"];
+                        if ([dataString containsString:@"王"] || [dataString containsString:@":"] || ![dataString containsString:@":"]) {
+                            验证状态=NO;
+                        }
                         到期时间=arr[4];
                         验证状态=YES;
                     }else{

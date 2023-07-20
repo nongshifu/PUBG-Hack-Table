@@ -301,28 +301,7 @@ static void EndGame()
 {
     team_colors.clear();
 }
-//覆盖写文件
-void writeStringToFile2(NSString* str, NSString* fileName) {
-    
-    // 将NSString对象转换为C风格字符串
-    const char *cStr = [str UTF8String];
-    
-    // 将C字符串写入文件
-    FILE *file = fopen([fileName UTF8String], "w");
-    if (file == NULL) {
-        NSLog(@"Failed to open file %@", fileName);
-        return;
-    }
-    size_t len = strlen(cStr);
-    size_t written = fwrite(cStr, sizeof(char), len, file);
-    if (written != len) {
-        NSLog(@"Failed to write string to file %@", fileName);
-        return;
-    }
-    
-    // 关闭文件
-    fclose(file);
-}
+
 - (void)绘制玩家:(ImDrawList*)MsDrawList{
     
     static dispatch_once_t onceToken;
@@ -392,7 +371,7 @@ void writeStringToFile2(NSString* str, NSString* fileName) {
         }
         
         int 圈=追踪圆圈半径*200;
-        MsDrawList->AddCircle(ImVec2(kWidth/2, kHeight/2), 圈, ImColor(射线颜色));
+        MsDrawList->AddCircle(ImVec2(kWidth/2, kHeight/2), 圈, ImColor(射线颜色),400,1);
         if(追踪开关){
             NSString*NewName=[NSString stringWithFormat:@"追踪距离:%.2f M",追踪距离*400];
             const char *cString = [NewName cStringUsingEncoding:NSUTF8StringEncoding];

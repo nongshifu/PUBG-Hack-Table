@@ -339,43 +339,52 @@ static BOOL 开关[100];
             //以下是其他控件
             if (indexPath.section ==2 && indexPath.row ==6){
                 // 创建滑动条
-                UISlider *slider = [[UISlider alloc] initWithFrame:CGRectMake(100, 0, cell.contentView.frame.size.width-110, cell.contentView.frame.size.height)];
+                UISlider *slider = [[UISlider alloc] initWithFrame:CGRectMake(100, 0, self.tableView.frame.size.width-110, cell.contentView.frame.size.height)];
 
                 // 设置滑动条的最小值、最大值、当前值
                 slider.minimumValue = 0;
                 slider.maximumValue = 1;
+                slider.thumbTintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:0.5];//颜色
+                slider.tintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:10.5];//颜色
                 slider.value = [[NSUserDefaults standardUserDefaults] floatForKey:@"追踪圆圈半径"];
-
+                
                 // 添加滑动条的事件
                 [slider addTarget:self action:@selector(追踪圆圈半径调用:) forControlEvents:UIControlEventValueChanged];
-
+                
                 // 将滑动条添加到视图中
                 [cell.contentView addSubview:slider];
             }
             else if (indexPath.section ==2 && indexPath.row ==7){
-               // 创建选项卡控件
-               UISegmentedControl *segmentedControl = [[UISegmentedControl alloc] initWithItems:@[@"头", @"胸", @"腰", @"脚"]];
-
-               // 设置控件位置和大小
-               segmentedControl.frame = CGRectMake(100, 5, cell.contentView.frame.size.width-110, cell.contentView.frame.size.height-10);
-
-               // 设置默认选中的选项
-               segmentedControl.selectedSegmentIndex = 0;
-
-               // 添加选项卡的事件
-               [segmentedControl addTarget:self action:@selector(追踪位置调用:) forControlEvents:UIControlEventValueChanged];
-
-               // 将选项卡添加到视图中
-               [cell.contentView addSubview:segmentedControl];
+                // 创建选项卡控件
+                UISegmentedControl *segmentedControl = [[UISegmentedControl alloc] initWithItems:@[@"头", @"胸", @"腰", @"脚"]];
+                
+                // 设置控件位置和大小
+                segmentedControl.frame = CGRectMake(100, 5, self.tableView.frame.size.width-110, cell.contentView.frame.size.height-10);
+                
+                if (@available(iOS 13.0, *)) {
+                    segmentedControl.selectedSegmentTintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:0.5];
+                }
+                
+                segmentedControl.tintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:0.5];//颜色
+                // 设置默认选中的选项
+                segmentedControl.selectedSegmentIndex = 0;
+                
+                // 添加选项卡的事件
+                [segmentedControl addTarget:self action:@selector(追踪位置调用:) forControlEvents:UIControlEventValueChanged];
+                
+                // 将选项卡添加到视图中
+                [cell.contentView addSubview:segmentedControl];
             }
             else if (indexPath.section ==2 && indexPath.row ==8){
                 // 创建滑动条
-                UISlider *slider = [[UISlider alloc] initWithFrame:CGRectMake(100, 0, cell.contentView.frame.size.width-110, cell.contentView.frame.size.height)];
+                UISlider *slider = [[UISlider alloc] initWithFrame:CGRectMake(100, 0, self.tableView.frame.size.width-110, cell.contentView.frame.size.height)];
 
                 // 设置滑动条的最小值、最大值、当前值
                 slider.minimumValue = 0;
                 slider.maximumValue = 1;
                 slider.value = [[NSUserDefaults standardUserDefaults] floatForKey:@"追踪距离"];
+                slider.thumbTintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:0.5];//颜色
+                slider.tintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:0.5];//颜色
 
                 // 添加滑动条的事件
                 [slider addTarget:self action:@selector(追踪距离调用:) forControlEvents:UIControlEventValueChanged];
@@ -385,12 +394,14 @@ static BOOL 开关[100];
             }
             else if (indexPath.section ==2 && indexPath.row ==9){
                 // 创建滑动条
-                UISlider *slider = [[UISlider alloc] initWithFrame:CGRectMake(100, 0, cell.contentView.frame.size.width-110, cell.contentView.frame.size.height)];
+                UISlider *slider = [[UISlider alloc] initWithFrame:CGRectMake(100, 0, self.tableView.frame.size.width-110, cell.contentView.frame.size.height)];
 
                 // 设置滑动条的最小值、最大值、当前值
                 slider.minimumValue = 0;
                 slider.maximumValue = 1;
                 slider.value = [[NSUserDefaults standardUserDefaults] floatForKey:@"自瞄速度"];
+                slider.thumbTintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:0.5];//颜色
+                slider.tintColor = [UIColor colorWithRed:arc4random() % 256 / 255.0 green:arc4random() % 256 / 255.0 blue:arc4random() % 256 / 255.0 alpha:0.5];//颜色
 
                 // 添加滑动条的事件
                 [slider addTarget:self action:@selector(自瞄速度调用:) forControlEvents:UIControlEventValueChanged];
@@ -402,6 +413,7 @@ static BOOL 开关[100];
                 UISwitch *mySwitch = [[UISwitch alloc] initWithFrame:CGRectMake(self.tableView.frame.size.width-60, 5, 60, 40)];
                 //绑定开关唯一标识符
                 mySwitch.tag=tagindexPath;
+               
                 // 设置开关的状态，默认为关闭状态
                 [mySwitch setOn:开关[tagindexPath]];
                 //开关的开启状态颜色 随机色
@@ -524,6 +536,13 @@ static BOOL 开关[100];
     if (selectedIndex==23) {
         追踪开关=Switch.on;
     }
+    if (selectedIndex==24) {
+        防抖开关=Switch.on;
+    }
+    if (selectedIndex==25) {
+        自瞄开关=Switch.on;
+    }
+    
     
     //第4个分组
     
